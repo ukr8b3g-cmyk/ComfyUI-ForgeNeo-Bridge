@@ -1,0 +1,46 @@
+name: Pinned reference audit
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/oracle.yml'
+permissions:
+  contents: read
+jobs:
+  reference:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch pinned reference sources (never installed or executed)
+        shell: python
+        run: |
+          import hashlib, io, json, pathlib, urllib.request, zipfile
+          root = pathlib.Path('reference_sources')
+          root.mkdir()
+          refs = {
+              'forge': ('Haoming02/sd-webui-forge-classic', '710f1e25fcac84d880cbccf27d11b2e3276e589e'),
+              'neo': ('wangjue520/ComfyUI-Neo-Sampler', '925257cf3a97ea203d30d37fb24b3657721c986a'),
+              'comfy': ('Comfy-Org/ComfyUI', 'master'),
+              'frontend': ('Comfy-Org/ComfyUI_frontend', 'main'),
+          }
+          manifest = {}
+          for name, (repo, ref) in refs.items():
+              req = urllib.request.Request(f'https://api.github.com/repos/{repo}/commits/{ref}', headers={'User-Agent': 'ForgeNeo-Bridge-reference-audit'})
+              sha = json.load(urllib.request.urlopen(req))['sha']
+              data = urllib.request.urlopen(f'https://codeload.github.com/{repo}/zip/{sha}').read()
+              manifest[name] = {'repository': repo, 'commit': sha, 'archive_sha256': hashlib.sha256(data).hexdigest()}
+              archive = zipfile.ZipFile(io.BytesIO(data))
+              for info in archive.infolist():
+                  parts = pathlib.PurePosixPath(info.filename).parts[1:]
+                  if not parts or info.is_dir() or '..' in parts:
+                      continue
+                  path = root / name / pathlib.Path(*parts)
+                  if path.suffix.lower() not in ('.py', '.js', '.ts', '.json', '.md', '.toml', '.txt', '.yml', '.yaml') and path.name not in ('LICENSE', 'COPYING'):
+                      continue
+                  path.parent.mkdir(parents=True, exist_ok=True)
+                  path.write_bytes(archive.read(info))
+          (root / 'manifest.json').write_text(json.dumps(manifest, indent=2))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reference-sources
+          path: reference_sources
+          retention-days: 7
