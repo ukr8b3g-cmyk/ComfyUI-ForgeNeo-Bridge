@@ -14,7 +14,6 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     env:
-      FORGE_REFERENCE: ${{ runner.temp }}/bridge-refs/forge
       HF_HUB_OFFLINE: '1'
       TRANSFORMERS_OFFLINE: '1'
       OMP_NUM_THREADS: '2'
@@ -33,6 +32,8 @@ jobs:
       - name: Fetch pinned Forge oracle
         run: python tools/fetch_test_references.py "${{ runner.temp }}/bridge-refs"
       - name: CPU tests against fixed reference
+        env:
+          FORGE_REFERENCE: ${{ runner.temp }}/bridge-refs/forge
         run: python -m pytest -q --junitxml=pytest-results.xml
       - name: JavaScript contracts
         run: node --test tests/frontend.test.mjs
