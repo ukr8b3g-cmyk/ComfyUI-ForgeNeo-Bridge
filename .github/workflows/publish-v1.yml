@@ -1,0 +1,94 @@
+name: Publish verified V1 source
+on:
+  push:
+    paths: ['.github/workflows/publish-v1.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: bridge-v1-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify and unpack tested source
+        shell: python
+        run: |
+          import hashlib, json, lzma, os, pathlib
+          root = pathlib.Path.cwd()
+          chunks = [root / '.delivery' / f'{i:03}.txt' for i in range(24)]
+          for p in chunks:
+              assert p.is_file() and p.stat().st_size < 10000, str(p)
+          digits = ''.join(''.join(p.read_text(encoding='ascii').split()) for p in chunks)
+          assert len(digits) == 208104 and digits.isascii() and digits.isdigit()
+          assert len(digits) % 29 == 0
+          compressed = b''.join(int(digits[i:i+29]).to_bytes(12, 'big') for i in range(0, len(digits), 29))[:86104]
+          assert hashlib.sha256(compressed).hexdigest() == 'cf153be47a8864972a7ad9c2812eb739db416673570f500181f6485d8b07b647', 'Source transport checksum mismatch'
+          decoder = lzma.LZMADecompressor(memlimit=256*1024*1024)
+          raw = decoder.decompress(compressed, max_length=391031)
+          assert decoder.eof and len(raw) == 391030
+          assert hashlib.sha256(raw).hexdigest() == '0e857f3cfa38a1f0390b6c5679c2a10ac684affb2f9a1e5a419752242e787b54'
+          payload = json.loads(raw)
+          assert len(payload['files']) == 51 and len(payload['expected_files']) == 94
+          for relative, content in payload['files'].items():
+              path = pathlib.PurePosixPath(relative)
+              assert not path.is_absolute() and '..' not in path.parts and '.git' not in path.parts and '\\' not in relative and ':' not in relative
+              target = root / pathlib.Path(*path.parts)
+              assert not target.is_symlink()
+              target.parent.mkdir(parents=True, exist_ok=True)
+              target.write_bytes(content.encode('utf-8'))
+          manifest = pathlib.Path(os.environ['RUNNER_TEMP']) / 'bridge-expected-files.json'
+          manifest.write_text(json.dumps(payload['expected_files']), encoding='utf-8')
+          print('Verified source payload; wrote 51 authored files.')
+      - name: Reproduce attributed pinned reference files
+        run: |
+          python -m pip install lark==1.3.1
+          python tools/vendor_lark.py
+          python tools/fetch_test_references.py "${{ runner.temp }}/bridge-refs"
+          python tools/vendor_reference.py "${{ runner.temp }}/bridge-refs"
+      - name: Verify every final source file
+        shell: python
+        run: |
+          import hashlib, json, os, pathlib
+          manifest = json.loads((pathlib.Path(os.environ['RUNNER_TEMP']) / 'bridge-expected-files.json').read_text())
+          failures = []
+          for name, expected in manifest.items():
+              p = pathlib.Path(name)
+              actual = hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else 'MISSING'
+              if actual != expected:
+                  failures.append({'path': name, 'expected': expected, 'actual': actual})
+          assert not failures, json.dumps(failures, indent=2)
+          print(f'PASS: all {len(manifest)} files exactly match the locally tested source.')
+      - name: Validate published code before commit
+        env:
+          FORGE_REFERENCE: ${{ runner.temp }}/bridge-refs/forge
+          OMP_NUM_THREADS: '2'
+        run: |
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -r tools/requirements-test.txt
+          python -m pytest -q
+          node --test tests/frontend.test.mjs
+          python -m compileall -q bridge nodes.py vendor
+      - name: Remove delivery-only scaffolding and commit implementation
+        shell: bash
+        run: |
+          rm -rf -- .delivery
+          rm -f -- .github/workflows/oracle.yml .github/workflows/cpu-deps.yml .github/workflows/publish-v1.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --all
+          git diff --cached --check
+          git commit -m 'Implement ForgeNeo Bridge V1: isolated sampling, conditioning, RNG and metadata import'
+          git push origin HEAD:main
+          git rev-parse HEAD
