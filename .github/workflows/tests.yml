@@ -1,0 +1,63 @@
+name: Bridge validation
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cpu:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      FORGE_REFERENCE: ${{ runner.temp }}/bridge-refs/forge
+      HF_HUB_OFFLINE: '1'
+      TRANSFORMERS_OFFLINE: '1'
+      OMP_NUM_THREADS: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated test dependencies
+        run: |
+          python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -r tools/requirements-test.txt
+      - name: Fetch pinned Forge oracle
+        run: python tools/fetch_test_references.py "${{ runner.temp }}/bridge-refs"
+      - name: CPU tests against fixed reference
+        run: python -m pytest -q --junitxml=pytest-results.xml
+      - name: JavaScript contracts
+        run: node --test tests/frontend.test.mjs
+      - name: Syntax compilation
+        run: python -m compileall -q bridge nodes.py vendor
+      - name: Install isolated Core/browser harness dependencies
+        if: runner.os == 'Linux'
+        run: |
+          python -m pip install torchvision==0.25.0 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -r tools/requirements-core-test.txt
+          python -m playwright install --with-deps chromium
+          python tools/fetch_test_references.py "${{ runner.temp }}/bridge-refs" --with-comfy
+      - name: Actual Comfy CPU API, synthetic weights only
+        if: runner.os == 'Linux'
+        run: python tools/core_smoke.py "${{ runner.temp }}/bridge-refs/comfy"
+      - name: Chromium editor harness, mocked Comfy host
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          export CHROMIUM="$(python -c 'from playwright.sync_api import sync_playwright; p=sync_playwright().start(); print(p.chromium.executable_path); p.stop()')"
+          python tools/browser_smoke.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bridge-validation-${{ runner.os }}
+          path: pytest-results.xml
+          if-no-files-found: warn
+          retention-days: 14
