@@ -13,7 +13,7 @@ jobs:
         with:
           python-version: '3.13'
       - run: |
-          python -m pip download --no-deps --only-binary=:all: --dest wheels torchsde==0.2.6 trampoline==0.1.2 transformers==4.57.6 tokenizers==0.22.2 comfy-kitchen==0.2.35 comfy-aimdo==0.5.5 blake3 av kornia kornia_rs spandrel
+          python -m pip download --no-deps --only-binary=:all: --dest wheels huggingface-hub==0.36.0
       - uses: actions/upload-artifact@v4
         with:
           name: cpu-audit-wheels
