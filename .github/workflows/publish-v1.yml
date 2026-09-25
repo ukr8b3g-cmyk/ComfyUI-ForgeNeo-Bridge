@@ -70,6 +70,21 @@ jobs:
                   failures.append({'path': name, 'expected': expected, 'actual': actual})
           assert not failures, json.dumps(failures, indent=2)
           print(f'PASS: all {len(manifest)} files exactly match the locally tested source.')
+      - name: Apply verified whitespace-only corrections
+        shell: python
+        run: |
+          import ast, hashlib, pathlib
+          expected = {
+              'bridge/spec.py': '7ebcf0f626ea2f305847d13e4b2e8968147628f3dc3cde1f36eb7e1ad51f53ae',
+              'bridge/brownian.py': 'd410dfc8ff1df9ffd1a4c12fc3b61bd77f69e4525537bb746a11fd88927a8a84',
+          }
+          for name, digest in expected.items():
+              p = pathlib.Path(name)
+              original = p.read_text(encoding='utf-8')
+              cleaned = '\n'.join(line.rstrip() for line in original.splitlines()).rstrip() + '\n'
+              assert ast.dump(ast.parse(original)) == ast.dump(ast.parse(cleaned))
+              assert hashlib.sha256(cleaned.encode('utf-8')).hexdigest() == digest
+              p.write_bytes(cleaned.encode('utf-8'))
       - name: Validate published code before commit
         env:
           FORGE_REFERENCE: ${{ runner.temp }}/bridge-refs/forge
