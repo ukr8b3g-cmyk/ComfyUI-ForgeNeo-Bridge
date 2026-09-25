@@ -1,0 +1,203 @@
+{
+  "schema_version": "1.0.0",
+  "profile": {
+    "id": "forge-neo@710f1e25",
+    "reference_repository": "Haoming02/sd-webui-forge-classic",
+    "reference_commit": "710f1e25fcac84d880cbccf27d11b2e3276e589e"
+  },
+  "policy": "strict",
+  "status": "needs_review",
+  "source": {
+    "kind": "manual",
+    "exporter": "unknown",
+    "exporter_version": null,
+    "verified_exporter_commit": null,
+    "filename": null,
+    "image_sha256": null,
+    "raw_infotext": null,
+    "native_workflow_present": false,
+    "raw_fields": []
+  },
+  "requested": {},
+  "effective": {
+    "family": "sd15",
+    "prediction_type": "epsilon",
+    "mode": "txt2img",
+    "assets": [],
+    "loras": [],
+    "image": {
+      "width": 512,
+      "height": 768,
+      "batch_size": 1
+    },
+    "text": {
+      "positive_raw": "A red ceramic teapot on a wooden table, a white cup on the right, soft window light, plain background.",
+      "negative_raw": "blurry, low quality, text, watermark",
+      "parser": "forge_neo_710f1e25",
+      "emphasis": "Original",
+      "clip_skip": 2,
+      "layer_policy": "sd15_forge",
+      "comma_padding_backtrack": 20,
+      "schedule_clock": "forge_denoiser_call",
+      "lora_policy": "explicit_loader_only"
+    },
+    "noise": {
+      "seed": "1895162280",
+      "source": "CPU",
+      "ensd": "0",
+      "subseed": "0",
+      "subseed_strength": 0.0,
+      "batch_seed_rule": "forge_image_rng",
+      "seed_resize_from": {
+        "width": 0,
+        "height": 0
+      },
+      "stream_policy": "forge_image_rng_private_v1"
+    },
+    "sampling": {
+      "sampler": "euler",
+      "scheduler": "simple",
+      "steps": 20,
+      "cfg": 7.0,
+      "denoise": 1.0,
+      "img2img_step_mode": "forge_scaled",
+      "img2img_extra_noise": 0.0,
+      "eta_ancestral": 1.0,
+      "eta_ddim": 0.0,
+      "s_churn": 0.0,
+      "s_tmin": 0.0,
+      "s_tmax": 0.0,
+      "s_noise": 1.0,
+      "sigma_min": null,
+      "sigma_max": null,
+      "rho": null,
+      "beta_alpha": 0.6,
+      "beta_beta": 0.6,
+      "discard_penultimate_requested": false,
+      "sgm_noise_multiplier_requested": false,
+      "shift": null,
+      "noise_schedule": "Default",
+      "flow_match_options": {
+        "use_dynamic_shifting": false,
+        "invert_sigmas": false,
+        "use_karras_sigmas": false,
+        "use_exponential_sigmas": false,
+        "use_beta_sigmas": false,
+        "stochastic_sampling": false
+      }
+    },
+    "guidance": {
+      "skip_early_cfg": 0.0,
+      "ngms": 0.0,
+      "ngms_all_steps": false,
+      "batching_policy": "as_loaded"
+    },
+    "numeric": {
+      "model_dtype": "as_loaded",
+      "text_encoder_dtype": "as_loaded",
+      "anima_adapter_dtype": null,
+      "sampling_dtype": "fp32",
+      "vae_dtype": "as_loaded",
+      "attention_backend": "as_loaded",
+      "reference_environment_id": null
+    },
+    "sdxl": null
+  },
+  "provenance": {
+    "/family": {
+      "origin": "manual_input",
+      "certainty": "explicit",
+      "acknowledged": true,
+      "raw_key": null,
+      "evidence": "Design example only; not extracted generation settings."
+    },
+    "/prediction_type": {
+      "origin": "manual_input",
+      "certainty": "explicit",
+      "acknowledged": true,
+      "raw_key": null,
+      "evidence": "Design example only; not extracted generation settings."
+    },
+    "/mode": {
+      "origin": "manual_input",
+      "certainty": "explicit",
+      "acknowledged": true,
+      "raw_key": null,
+      "evidence": "Design example only; not extracted generation settings."
+    },
+    "/assets": {
+      "origin": "manual_input",
+      "certainty": "explicit",
+      "acknowledged": true,
+      "raw_key": null,
+      "evidence": "Design example only; not extracted generation settings."
+    },
+    "/loras": {
+      "origin": "manual_input",
+      "certainty": "explicit",
+      "acknowledged": true,
+      "raw_key": null,
+      "evidence": "Design example only; not extracted generation settings."
+    },
+    "/image": {
+      "origin": "manual_input",
+      "certainty": "explicit",
+      "acknowledged": true,
+      "raw_key": null,
+      "evidence": "Design example only; not extracted generation settings."
+    },
+    "/text": {
+      "origin": "manual_input",
+      "certainty": "explicit",
+      "acknowledged": true,
+      "raw_key": null,
+      "evidence": "Design example only; not extracted generation settings."
+    },
+    "/noise": {
+      "origin": "manual_input",
+      "certainty": "explicit",
+      "acknowledged": true,
+      "raw_key": null,
+      "evidence": "Design example only; not extracted generation settings."
+    },
+    "/sampling": {
+      "origin": "manual_input",
+      "certainty": "explicit",
+      "acknowledged": true,
+      "raw_key": null,
+      "evidence": "Design example only; not extracted generation settings."
+    },
+    "/guidance": {
+      "origin": "manual_input",
+      "certainty": "explicit",
+      "acknowledged": true,
+      "raw_key": null,
+      "evidence": "Design example only; not extracted generation settings."
+    },
+    "/numeric": {
+      "origin": "manual_input",
+      "certainty": "explicit",
+      "acknowledged": true,
+      "raw_key": null,
+      "evidence": "Design example only; not extracted generation settings."
+    },
+    "/sdxl": {
+      "origin": "manual_input",
+      "certainty": "explicit",
+      "acknowledged": true,
+      "raw_key": null,
+      "evidence": "Design example only; not extracted generation settings."
+    }
+  },
+  "unresolved": [
+    {
+      "code": "ASSET_BINDING_REQUIRED",
+      "path": "/assets",
+      "message": "Bind actual model, text encoder, VAE and any LoRA files before strict execution. This example intentionally does not invent file hashes."
+    }
+  ],
+  "unsupported": [],
+  "warnings": [],
+  "extensions": {},
+  "config_hash": "2f2c6250a3373cb22efffb1076ac995374b6e561c42d69a55c93e782ee7fd738"
+}

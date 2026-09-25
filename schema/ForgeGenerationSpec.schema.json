@@ -1,0 +1,2228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:forge-compat:ForgeGenerationSpec:1.0.0",
+  "title": "ForgeGenerationSpec 1.0.0",
+  "description": "Final design contract. Not an implementation or a claim of completed GPU parity tests.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "profile": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "const": "forge-neo@710f1e25"
+        },
+        "reference_repository": {
+          "const": "Haoming02/sd-webui-forge-classic"
+        },
+        "reference_commit": {
+          "const": "710f1e25fcac84d880cbccf27d11b2e3276e589e"
+        }
+      },
+      "required": [
+        "id",
+        "reference_repository",
+        "reference_commit"
+      ],
+      "additionalProperties": false
+    },
+    "policy": {
+      "enum": [
+        "strict",
+        "exploratory"
+      ]
+    },
+    "status": {
+      "enum": [
+        "ready",
+        "needs_review",
+        "unsupported"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "manual",
+            "image",
+            "infotext",
+            "spec_json"
+          ]
+        },
+        "exporter": {
+          "enum": [
+            "forge_neo",
+            "a1111",
+            "comfyui",
+            "unknown"
+          ]
+        },
+        "exporter_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "verified_exporter_commit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "filename": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "image_sha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "raw_infotext": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "native_workflow_present": {
+          "type": "boolean"
+        },
+        "raw_fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "key",
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "exporter",
+        "exporter_version",
+        "verified_exporter_commit",
+        "filename",
+        "image_sha256",
+        "raw_infotext",
+        "native_workflow_present",
+        "raw_fields"
+      ],
+      "additionalProperties": false
+    },
+    "requested": {
+      "type": "object",
+      "description": "Canonical JSON Pointer -> original/user-requested JSON value. Valid pointers and precedence are checked by semantic validation. Duplicate source keys remain in source.raw_fields.",
+      "propertyNames": {
+        "pattern": "^/"
+      },
+      "additionalProperties": {}
+    },
+    "effective": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "family": {
+              "enum": [
+                "anima",
+                "sd15",
+                "sdxl"
+              ]
+            },
+            "prediction_type": {
+              "enum": [
+                "flow",
+                "epsilon",
+                "v_prediction"
+              ]
+            },
+            "mode": {
+              "enum": [
+                "txt2img",
+                "img2img",
+                "hires_fix",
+                "inpaint"
+              ]
+            },
+            "assets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "asset_id": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "enum": [
+                      "model",
+                      "text_encoder",
+                      "vae",
+                      "lora",
+                      "embedding",
+                      "init_image",
+                      "mask",
+                      "refiner",
+                      "upscaler"
+                    ]
+                  },
+                  "component": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "category": {
+                    "anyOf": [
+                      {
+                        "enum": [
+                          "checkpoints",
+                          "diffusion_models",
+                          "text_encoders",
+                          "vae",
+                          "loras",
+                          "embeddings",
+                          "input",
+                          "upscale_models"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "relative_name": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "sha256": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "short_hash": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "scheme": {
+                            "enum": [
+                              "forge_model_hash",
+                              "forge_lora_hash",
+                              "unknown"
+                            ]
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "scheme",
+                          "value"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "resolution": {
+                    "enum": [
+                      "connected",
+                      "resolved",
+                      "unresolved",
+                      "ambiguous"
+                    ]
+                  },
+                  "binding_verification": {
+                    "enum": [
+                      "unverified",
+                      "known_loader_chain",
+                      "sha256_verified"
+                    ]
+                  }
+                },
+                "required": [
+                  "asset_id",
+                  "role",
+                  "component",
+                  "category",
+                  "relative_name",
+                  "sha256",
+                  "short_hash",
+                  "resolution",
+                  "binding_verification"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "loras": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "asset_id": {
+                    "type": "string"
+                  },
+                  "strength_model": {
+                    "type": "number",
+                    "minimum": -10,
+                    "maximum": 10
+                  },
+                  "strength_text_encoder": {
+                    "type": "number",
+                    "minimum": -10,
+                    "maximum": 10
+                  },
+                  "order": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 255
+                  }
+                },
+                "required": [
+                  "asset_id",
+                  "strength_model",
+                  "strength_text_encoder",
+                  "order"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "image": {
+              "type": "object",
+              "properties": {
+                "width": {
+                  "type": "integer",
+                  "minimum": 8,
+                  "maximum": 16384
+                },
+                "height": {
+                  "type": "integer",
+                  "minimum": 8,
+                  "maximum": 16384
+                },
+                "batch_size": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 64
+                }
+              },
+              "required": [
+                "width",
+                "height",
+                "batch_size"
+              ],
+              "additionalProperties": false
+            },
+            "text": {
+              "type": "object",
+              "properties": {
+                "positive_raw": {
+                  "type": "string"
+                },
+                "negative_raw": {
+                  "type": "string"
+                },
+                "parser": {
+                  "enum": [
+                    "forge_neo_710f1e25"
+                  ]
+                },
+                "emphasis": {
+                  "enum": [
+                    "Original",
+                    "No norm",
+                    "Ignore",
+                    "None"
+                  ]
+                },
+                "clip_skip": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 12
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "layer_policy": {
+                  "enum": [
+                    "anima_last",
+                    "sd15_forge",
+                    "sdxl_forge"
+                  ]
+                },
+                "comma_padding_backtrack": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "schedule_clock": {
+                  "enum": [
+                    "forge_denoiser_call"
+                  ]
+                },
+                "lora_policy": {
+                  "enum": [
+                    "explicit_loader_only"
+                  ]
+                }
+              },
+              "required": [
+                "positive_raw",
+                "negative_raw",
+                "parser",
+                "emphasis",
+                "clip_skip",
+                "layer_policy",
+                "comma_padding_backtrack",
+                "schedule_clock",
+                "lora_policy"
+              ],
+              "additionalProperties": false
+            },
+            "noise": {
+              "type": "object",
+              "properties": {
+                "seed": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$",
+                  "description": "Unsigned decimal text; semantic validation additionally enforces 0 <= value <= 2**64-1. No -1 or floating-point conversion."
+                },
+                "source": {
+                  "enum": [
+                    "CPU",
+                    "GPU",
+                    "NV"
+                  ]
+                },
+                "ensd": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$",
+                  "description": "Unsigned decimal text; semantic validation additionally enforces 0 <= value <= 2**64-1. No -1 or floating-point conversion."
+                },
+                "subseed": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$",
+                  "description": "Unsigned decimal text; semantic validation additionally enforces 0 <= value <= 2**64-1. No -1 or floating-point conversion."
+                },
+                "subseed_strength": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "batch_seed_rule": {
+                  "enum": [
+                    "forge_image_rng"
+                  ]
+                },
+                "seed_resize_from": {
+                  "type": "object",
+                  "properties": {
+                    "width": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 16384
+                    },
+                    "height": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 16384
+                    }
+                  },
+                  "required": [
+                    "width",
+                    "height"
+                  ],
+                  "additionalProperties": false
+                },
+                "stream_policy": {
+                  "enum": [
+                    "forge_image_rng_private_v1"
+                  ]
+                }
+              },
+              "required": [
+                "seed",
+                "source",
+                "ensd",
+                "subseed",
+                "subseed_strength",
+                "batch_seed_rule",
+                "seed_resize_from",
+                "stream_policy"
+              ],
+              "additionalProperties": false
+            },
+            "sampling": {
+              "type": "object",
+              "properties": {
+                "sampler": {
+                  "enum": [
+                    "dpmpp_2m",
+                    "dpmpp_sde",
+                    "dpmpp_2m_sde",
+                    "dpmpp_3m_sde",
+                    "dpmpp_2s_ancestral_rf",
+                    "euler_ancestral",
+                    "euler",
+                    "er_sde",
+                    "lcm",
+                    "lms",
+                    "heun",
+                    "dpm_2",
+                    "res_multistep",
+                    "kohaku_lonyu_yog",
+                    "restart",
+                    "unipc",
+                    "ddim",
+                    "plms",
+                    "dpmpp_2m_cfg_pp",
+                    "euler_ancestral_cfg_pp",
+                    "euler_cfg_pp"
+                  ]
+                },
+                "scheduler": {
+                  "enum": [
+                    "automatic",
+                    "karras",
+                    "exponential",
+                    "polyexponential",
+                    "normal",
+                    "simple",
+                    "uniform",
+                    "sgm_uniform",
+                    "linear_quadratic",
+                    "kl_optimal",
+                    "ddim",
+                    "align_your_steps",
+                    "beta",
+                    "turbo",
+                    "bong_tangent",
+                    "flow_match",
+                    "flux2"
+                  ]
+                },
+                "steps": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1000
+                },
+                "cfg": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "denoise": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "img2img_step_mode": {
+                  "enum": [
+                    "forge_scaled",
+                    "exact_steps"
+                  ]
+                },
+                "img2img_extra_noise": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "eta_ancestral": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "eta_ddim": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "s_churn": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "s_tmin": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 10
+                },
+                "s_tmax": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 999
+                },
+                "s_noise": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1.1
+                },
+                "sigma_min": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "sigma_max": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "rho": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "beta_alpha": {
+                  "type": "number",
+                  "minimum": 0.01,
+                  "maximum": 2
+                },
+                "beta_beta": {
+                  "type": "number",
+                  "minimum": 0.01,
+                  "maximum": 2
+                },
+                "discard_penultimate_requested": {
+                  "type": "boolean"
+                },
+                "sgm_noise_multiplier_requested": {
+                  "type": "boolean"
+                },
+                "shift": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "noise_schedule": {
+                  "enum": [
+                    "Default",
+                    "Zero Terminal SNR"
+                  ]
+                },
+                "flow_match_options": {
+                  "type": "object",
+                  "properties": {
+                    "use_dynamic_shifting": {
+                      "type": "boolean"
+                    },
+                    "invert_sigmas": {
+                      "type": "boolean"
+                    },
+                    "use_karras_sigmas": {
+                      "type": "boolean"
+                    },
+                    "use_exponential_sigmas": {
+                      "type": "boolean"
+                    },
+                    "use_beta_sigmas": {
+                      "type": "boolean"
+                    },
+                    "stochastic_sampling": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "use_dynamic_shifting",
+                    "invert_sigmas",
+                    "use_karras_sigmas",
+                    "use_exponential_sigmas",
+                    "use_beta_sigmas",
+                    "stochastic_sampling"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "sampler",
+                "scheduler",
+                "steps",
+                "cfg",
+                "denoise",
+                "img2img_step_mode",
+                "img2img_extra_noise",
+                "eta_ancestral",
+                "eta_ddim",
+                "s_churn",
+                "s_tmin",
+                "s_tmax",
+                "s_noise",
+                "sigma_min",
+                "sigma_max",
+                "rho",
+                "beta_alpha",
+                "beta_beta",
+                "discard_penultimate_requested",
+                "sgm_noise_multiplier_requested",
+                "shift",
+                "noise_schedule",
+                "flow_match_options"
+              ],
+              "additionalProperties": false
+            },
+            "guidance": {
+              "type": "object",
+              "properties": {
+                "skip_early_cfg": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "ngms": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 8
+                },
+                "ngms_all_steps": {
+                  "type": "boolean"
+                },
+                "batching_policy": {
+                  "enum": [
+                    "reference",
+                    "as_loaded"
+                  ]
+                }
+              },
+              "required": [
+                "skip_early_cfg",
+                "ngms",
+                "ngms_all_steps",
+                "batching_policy"
+              ],
+              "additionalProperties": false
+            },
+            "numeric": {
+              "type": "object",
+              "properties": {
+                "model_dtype": {
+                  "enum": [
+                    "as_loaded",
+                    "fp16",
+                    "bf16",
+                    "fp32"
+                  ]
+                },
+                "text_encoder_dtype": {
+                  "enum": [
+                    "as_loaded",
+                    "fp16",
+                    "bf16",
+                    "fp32"
+                  ]
+                },
+                "anima_adapter_dtype": {
+                  "anyOf": [
+                    {
+                      "enum": [
+                        "as_loaded",
+                        "fp16",
+                        "bf16",
+                        "fp32"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "sampling_dtype": {
+                  "enum": [
+                    "fp32"
+                  ]
+                },
+                "vae_dtype": {
+                  "enum": [
+                    "as_loaded",
+                    "fp16",
+                    "bf16",
+                    "fp32"
+                  ]
+                },
+                "attention_backend": {
+                  "type": "string"
+                },
+                "reference_environment_id": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "model_dtype",
+                "text_encoder_dtype",
+                "anima_adapter_dtype",
+                "sampling_dtype",
+                "vae_dtype",
+                "attention_backend",
+                "reference_environment_id"
+              ],
+              "additionalProperties": false
+            },
+            "sdxl": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "original_width": {
+                      "type": "integer",
+                      "minimum": 8,
+                      "maximum": 16384
+                    },
+                    "original_height": {
+                      "type": "integer",
+                      "minimum": 8,
+                      "maximum": 16384
+                    },
+                    "crop_left": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 16384
+                    },
+                    "crop_top": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 16384
+                    },
+                    "target_width": {
+                      "type": "integer",
+                      "minimum": 8,
+                      "maximum": 16384
+                    },
+                    "target_height": {
+                      "type": "integer",
+                      "minimum": 8,
+                      "maximum": 16384
+                    },
+                    "zero_empty_negative": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "original_width",
+                    "original_height",
+                    "crop_left",
+                    "crop_top",
+                    "target_width",
+                    "target_height",
+                    "zero_empty_negative"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "family",
+            "prediction_type",
+            "mode",
+            "assets",
+            "loras",
+            "image",
+            "text",
+            "noise",
+            "sampling",
+            "guidance",
+            "numeric",
+            "sdxl"
+          ],
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "family": {
+                    "const": "anima"
+                  }
+                },
+                "required": [
+                  "family"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "prediction_type": {
+                    "const": "flow"
+                  },
+                  "sdxl": {
+                    "type": "null"
+                  },
+                  "text": {
+                    "properties": {
+                      "clip_skip": {
+                        "type": "null"
+                      },
+                      "layer_policy": {
+                        "const": "anima_last"
+                      }
+                    }
+                  },
+                  "image": {
+                    "properties": {
+                      "width": {
+                        "multipleOf": 16
+                      },
+                      "height": {
+                        "multipleOf": 16
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "family": {
+                    "const": "sd15"
+                  }
+                },
+                "required": [
+                  "family"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "prediction_type": {
+                    "enum": [
+                      "epsilon",
+                      "v_prediction"
+                    ]
+                  },
+                  "sdxl": {
+                    "type": "null"
+                  },
+                  "text": {
+                    "properties": {
+                      "clip_skip": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 12
+                      },
+                      "layer_policy": {
+                        "const": "sd15_forge"
+                      }
+                    }
+                  },
+                  "image": {
+                    "properties": {
+                      "width": {
+                        "multipleOf": 8
+                      },
+                      "height": {
+                        "multipleOf": 8
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "family": {
+                    "const": "sdxl"
+                  }
+                },
+                "required": [
+                  "family"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "sdxl": {
+                    "type": "object",
+                    "properties": {
+                      "original_width": {
+                        "type": "integer",
+                        "minimum": 8,
+                        "maximum": 16384
+                      },
+                      "original_height": {
+                        "type": "integer",
+                        "minimum": 8,
+                        "maximum": 16384
+                      },
+                      "crop_left": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 16384
+                      },
+                      "crop_top": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 16384
+                      },
+                      "target_width": {
+                        "type": "integer",
+                        "minimum": 8,
+                        "maximum": 16384
+                      },
+                      "target_height": {
+                        "type": "integer",
+                        "minimum": 8,
+                        "maximum": 16384
+                      },
+                      "zero_empty_negative": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "original_width",
+                      "original_height",
+                      "crop_left",
+                      "crop_top",
+                      "target_width",
+                      "target_height",
+                      "zero_empty_negative"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "text": {
+                    "properties": {
+                      "clip_skip": {
+                        "type": "integer",
+                        "minimum": 2,
+                        "maximum": 12
+                      },
+                      "layer_policy": {
+                        "const": "sdxl_forge"
+                      }
+                    }
+                  },
+                  "image": {
+                    "properties": {
+                      "width": {
+                        "multipleOf": 8
+                      },
+                      "height": {
+                        "multipleOf": 8
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^/"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "origin": {
+            "enum": [
+              "metadata_explicit",
+              "metadata_implied",
+              "manual_input",
+              "user_override",
+              "profile_default",
+              "model_config"
+            ]
+          },
+          "certainty": {
+            "enum": [
+              "explicit",
+              "inferred"
+            ]
+          },
+          "acknowledged": {
+            "type": "boolean"
+          },
+          "raw_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "origin",
+          "certainty",
+          "acknowledged",
+          "raw_key",
+          "evidence"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "unresolved": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "path",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "unsupported": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "path",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "path",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "additionalProperties": {}
+    },
+    "config_hash": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "profile",
+    "policy",
+    "status",
+    "source",
+    "requested",
+    "effective",
+    "provenance",
+    "unresolved",
+    "unsupported",
+    "warnings",
+    "extensions",
+    "config_hash"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "ready"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "effective": {
+            "type": "object",
+            "properties": {
+              "family": {
+                "enum": [
+                  "anima",
+                  "sd15",
+                  "sdxl"
+                ]
+              },
+              "prediction_type": {
+                "enum": [
+                  "flow",
+                  "epsilon",
+                  "v_prediction"
+                ]
+              },
+              "mode": {
+                "enum": [
+                  "txt2img",
+                  "img2img",
+                  "hires_fix",
+                  "inpaint"
+                ]
+              },
+              "assets": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "asset_id": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "enum": [
+                        "model",
+                        "text_encoder",
+                        "vae",
+                        "lora",
+                        "embedding",
+                        "init_image",
+                        "mask",
+                        "refiner",
+                        "upscaler"
+                      ]
+                    },
+                    "component": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "category": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "checkpoints",
+                            "diffusion_models",
+                            "text_encoders",
+                            "vae",
+                            "loras",
+                            "embeddings",
+                            "input",
+                            "upscale_models"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "relative_name": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "sha256": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[0-9a-f]{64}$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "short_hash": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "scheme": {
+                              "enum": [
+                                "forge_model_hash",
+                                "forge_lora_hash",
+                                "unknown"
+                              ]
+                            },
+                            "value": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "scheme",
+                            "value"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "resolution": {
+                      "enum": [
+                        "connected",
+                        "resolved",
+                        "unresolved",
+                        "ambiguous"
+                      ]
+                    },
+                    "binding_verification": {
+                      "enum": [
+                        "unverified",
+                        "known_loader_chain",
+                        "sha256_verified"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "asset_id",
+                    "role",
+                    "component",
+                    "category",
+                    "relative_name",
+                    "sha256",
+                    "short_hash",
+                    "resolution",
+                    "binding_verification"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "loras": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "asset_id": {
+                      "type": "string"
+                    },
+                    "strength_model": {
+                      "type": "number",
+                      "minimum": -10,
+                      "maximum": 10
+                    },
+                    "strength_text_encoder": {
+                      "type": "number",
+                      "minimum": -10,
+                      "maximum": 10
+                    },
+                    "order": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 255
+                    }
+                  },
+                  "required": [
+                    "asset_id",
+                    "strength_model",
+                    "strength_text_encoder",
+                    "order"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "image": {
+                "type": "object",
+                "properties": {
+                  "width": {
+                    "type": "integer",
+                    "minimum": 8,
+                    "maximum": 16384
+                  },
+                  "height": {
+                    "type": "integer",
+                    "minimum": 8,
+                    "maximum": 16384
+                  },
+                  "batch_size": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 64
+                  }
+                },
+                "required": [
+                  "width",
+                  "height",
+                  "batch_size"
+                ],
+                "additionalProperties": false
+              },
+              "text": {
+                "type": "object",
+                "properties": {
+                  "positive_raw": {
+                    "type": "string"
+                  },
+                  "negative_raw": {
+                    "type": "string"
+                  },
+                  "parser": {
+                    "enum": [
+                      "forge_neo_710f1e25"
+                    ]
+                  },
+                  "emphasis": {
+                    "enum": [
+                      "Original",
+                      "No norm",
+                      "Ignore",
+                      "None"
+                    ]
+                  },
+                  "clip_skip": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 12
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "layer_policy": {
+                    "enum": [
+                      "anima_last",
+                      "sd15_forge",
+                      "sdxl_forge"
+                    ]
+                  },
+                  "comma_padding_backtrack": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 255
+                  },
+                  "schedule_clock": {
+                    "enum": [
+                      "forge_denoiser_call"
+                    ]
+                  },
+                  "lora_policy": {
+                    "enum": [
+                      "explicit_loader_only"
+                    ]
+                  }
+                },
+                "required": [
+                  "positive_raw",
+                  "negative_raw",
+                  "parser",
+                  "emphasis",
+                  "clip_skip",
+                  "layer_policy",
+                  "comma_padding_backtrack",
+                  "schedule_clock",
+                  "lora_policy"
+                ],
+                "additionalProperties": false
+              },
+              "noise": {
+                "type": "object",
+                "properties": {
+                  "seed": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,19})$",
+                    "description": "Unsigned decimal text; semantic validation additionally enforces 0 <= value <= 2**64-1. No -1 or floating-point conversion."
+                  },
+                  "source": {
+                    "enum": [
+                      "CPU",
+                      "GPU",
+                      "NV"
+                    ]
+                  },
+                  "ensd": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,19})$",
+                    "description": "Unsigned decimal text; semantic validation additionally enforces 0 <= value <= 2**64-1. No -1 or floating-point conversion."
+                  },
+                  "subseed": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,19})$",
+                    "description": "Unsigned decimal text; semantic validation additionally enforces 0 <= value <= 2**64-1. No -1 or floating-point conversion."
+                  },
+                  "subseed_strength": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "batch_seed_rule": {
+                    "enum": [
+                      "forge_image_rng"
+                    ]
+                  },
+                  "seed_resize_from": {
+                    "type": "object",
+                    "properties": {
+                      "width": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 16384
+                      },
+                      "height": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 16384
+                      }
+                    },
+                    "required": [
+                      "width",
+                      "height"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "stream_policy": {
+                    "enum": [
+                      "forge_image_rng_private_v1"
+                    ]
+                  }
+                },
+                "required": [
+                  "seed",
+                  "source",
+                  "ensd",
+                  "subseed",
+                  "subseed_strength",
+                  "batch_seed_rule",
+                  "seed_resize_from",
+                  "stream_policy"
+                ],
+                "additionalProperties": false
+              },
+              "sampling": {
+                "type": "object",
+                "properties": {
+                  "sampler": {
+                    "enum": [
+                      "dpmpp_2m",
+                      "dpmpp_sde",
+                      "dpmpp_2m_sde",
+                      "dpmpp_3m_sde",
+                      "dpmpp_2s_ancestral_rf",
+                      "euler_ancestral",
+                      "euler",
+                      "er_sde",
+                      "lcm",
+                      "lms",
+                      "heun",
+                      "dpm_2",
+                      "res_multistep",
+                      "kohaku_lonyu_yog",
+                      "restart",
+                      "unipc",
+                      "ddim",
+                      "plms",
+                      "dpmpp_2m_cfg_pp",
+                      "euler_ancestral_cfg_pp",
+                      "euler_cfg_pp"
+                    ]
+                  },
+                  "scheduler": {
+                    "enum": [
+                      "automatic",
+                      "karras",
+                      "exponential",
+                      "polyexponential",
+                      "normal",
+                      "simple",
+                      "uniform",
+                      "sgm_uniform",
+                      "linear_quadratic",
+                      "kl_optimal",
+                      "ddim",
+                      "align_your_steps",
+                      "beta",
+                      "turbo",
+                      "bong_tangent",
+                      "flow_match",
+                      "flux2"
+                    ]
+                  },
+                  "steps": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1000
+                  },
+                  "cfg": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "denoise": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "img2img_step_mode": {
+                    "enum": [
+                      "forge_scaled",
+                      "exact_steps"
+                    ]
+                  },
+                  "img2img_extra_noise": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "eta_ancestral": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "eta_ddim": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "s_churn": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "s_tmin": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 10
+                  },
+                  "s_tmax": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 999
+                  },
+                  "s_noise": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1.1
+                  },
+                  "sigma_min": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "sigma_max": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "rho": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "beta_alpha": {
+                    "type": "number",
+                    "minimum": 0.01,
+                    "maximum": 2
+                  },
+                  "beta_beta": {
+                    "type": "number",
+                    "minimum": 0.01,
+                    "maximum": 2
+                  },
+                  "discard_penultimate_requested": {
+                    "type": "boolean"
+                  },
+                  "sgm_noise_multiplier_requested": {
+                    "type": "boolean"
+                  },
+                  "shift": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "noise_schedule": {
+                    "enum": [
+                      "Default",
+                      "Zero Terminal SNR"
+                    ]
+                  },
+                  "flow_match_options": {
+                    "type": "object",
+                    "properties": {
+                      "use_dynamic_shifting": {
+                        "type": "boolean"
+                      },
+                      "invert_sigmas": {
+                        "type": "boolean"
+                      },
+                      "use_karras_sigmas": {
+                        "type": "boolean"
+                      },
+                      "use_exponential_sigmas": {
+                        "type": "boolean"
+                      },
+                      "use_beta_sigmas": {
+                        "type": "boolean"
+                      },
+                      "stochastic_sampling": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "use_dynamic_shifting",
+                      "invert_sigmas",
+                      "use_karras_sigmas",
+                      "use_exponential_sigmas",
+                      "use_beta_sigmas",
+                      "stochastic_sampling"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "sampler",
+                  "scheduler",
+                  "steps",
+                  "cfg",
+                  "denoise",
+                  "img2img_step_mode",
+                  "img2img_extra_noise",
+                  "eta_ancestral",
+                  "eta_ddim",
+                  "s_churn",
+                  "s_tmin",
+                  "s_tmax",
+                  "s_noise",
+                  "sigma_min",
+                  "sigma_max",
+                  "rho",
+                  "beta_alpha",
+                  "beta_beta",
+                  "discard_penultimate_requested",
+                  "sgm_noise_multiplier_requested",
+                  "shift",
+                  "noise_schedule",
+                  "flow_match_options"
+                ],
+                "additionalProperties": false
+              },
+              "guidance": {
+                "type": "object",
+                "properties": {
+                  "skip_early_cfg": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "ngms": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 8
+                  },
+                  "ngms_all_steps": {
+                    "type": "boolean"
+                  },
+                  "batching_policy": {
+                    "enum": [
+                      "reference",
+                      "as_loaded"
+                    ]
+                  }
+                },
+                "required": [
+                  "skip_early_cfg",
+                  "ngms",
+                  "ngms_all_steps",
+                  "batching_policy"
+                ],
+                "additionalProperties": false
+              },
+              "numeric": {
+                "type": "object",
+                "properties": {
+                  "model_dtype": {
+                    "enum": [
+                      "as_loaded",
+                      "fp16",
+                      "bf16",
+                      "fp32"
+                    ]
+                  },
+                  "text_encoder_dtype": {
+                    "enum": [
+                      "as_loaded",
+                      "fp16",
+                      "bf16",
+                      "fp32"
+                    ]
+                  },
+                  "anima_adapter_dtype": {
+                    "anyOf": [
+                      {
+                        "enum": [
+                          "as_loaded",
+                          "fp16",
+                          "bf16",
+                          "fp32"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "sampling_dtype": {
+                    "enum": [
+                      "fp32"
+                    ]
+                  },
+                  "vae_dtype": {
+                    "enum": [
+                      "as_loaded",
+                      "fp16",
+                      "bf16",
+                      "fp32"
+                    ]
+                  },
+                  "attention_backend": {
+                    "type": "string"
+                  },
+                  "reference_environment_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "model_dtype",
+                  "text_encoder_dtype",
+                  "anima_adapter_dtype",
+                  "sampling_dtype",
+                  "vae_dtype",
+                  "attention_backend",
+                  "reference_environment_id"
+                ],
+                "additionalProperties": false
+              },
+              "sdxl": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "original_width": {
+                        "type": "integer",
+                        "minimum": 8,
+                        "maximum": 16384
+                      },
+                      "original_height": {
+                        "type": "integer",
+                        "minimum": 8,
+                        "maximum": 16384
+                      },
+                      "crop_left": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 16384
+                      },
+                      "crop_top": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 16384
+                      },
+                      "target_width": {
+                        "type": "integer",
+                        "minimum": 8,
+                        "maximum": 16384
+                      },
+                      "target_height": {
+                        "type": "integer",
+                        "minimum": 8,
+                        "maximum": 16384
+                      },
+                      "zero_empty_negative": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "original_width",
+                      "original_height",
+                      "crop_left",
+                      "crop_top",
+                      "target_width",
+                      "target_height",
+                      "zero_empty_negative"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "family",
+              "prediction_type",
+              "mode",
+              "assets",
+              "loras",
+              "image",
+              "text",
+              "noise",
+              "sampling",
+              "guidance",
+              "numeric",
+              "sdxl"
+            ],
+            "additionalProperties": false,
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "family": {
+                      "const": "anima"
+                    }
+                  },
+                  "required": [
+                    "family"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "prediction_type": {
+                      "const": "flow"
+                    },
+                    "sdxl": {
+                      "type": "null"
+                    },
+                    "text": {
+                      "properties": {
+                        "clip_skip": {
+                          "type": "null"
+                        },
+                        "layer_policy": {
+                          "const": "anima_last"
+                        }
+                      }
+                    },
+                    "image": {
+                      "properties": {
+                        "width": {
+                          "multipleOf": 16
+                        },
+                        "height": {
+                          "multipleOf": 16
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "family": {
+                      "const": "sd15"
+                    }
+                  },
+                  "required": [
+                    "family"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "prediction_type": {
+                      "enum": [
+                        "epsilon",
+                        "v_prediction"
+                      ]
+                    },
+                    "sdxl": {
+                      "type": "null"
+                    },
+                    "text": {
+                      "properties": {
+                        "clip_skip": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 12
+                        },
+                        "layer_policy": {
+                          "const": "sd15_forge"
+                        }
+                      }
+                    },
+                    "image": {
+                      "properties": {
+                        "width": {
+                          "multipleOf": 8
+                        },
+                        "height": {
+                          "multipleOf": 8
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "family": {
+                      "const": "sdxl"
+                    }
+                  },
+                  "required": [
+                    "family"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "sdxl": {
+                      "type": "object",
+                      "properties": {
+                        "original_width": {
+                          "type": "integer",
+                          "minimum": 8,
+                          "maximum": 16384
+                        },
+                        "original_height": {
+                          "type": "integer",
+                          "minimum": 8,
+                          "maximum": 16384
+                        },
+                        "crop_left": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 16384
+                        },
+                        "crop_top": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 16384
+                        },
+                        "target_width": {
+                          "type": "integer",
+                          "minimum": 8,
+                          "maximum": 16384
+                        },
+                        "target_height": {
+                          "type": "integer",
+                          "minimum": 8,
+                          "maximum": 16384
+                        },
+                        "zero_empty_negative": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "original_width",
+                        "original_height",
+                        "crop_left",
+                        "crop_top",
+                        "target_width",
+                        "target_height",
+                        "zero_empty_negative"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "text": {
+                      "properties": {
+                        "clip_skip": {
+                          "type": "integer",
+                          "minimum": 2,
+                          "maximum": 12
+                        },
+                        "layer_policy": {
+                          "const": "sdxl_forge"
+                        }
+                      }
+                    },
+                    "image": {
+                      "properties": {
+                        "width": {
+                          "multipleOf": 8
+                        },
+                        "height": {
+                          "multipleOf": 8
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "unresolved": {
+            "maxItems": 0
+          },
+          "unsupported": {
+            "maxItems": 0
+          },
+          "config_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    }
+  ]
+}

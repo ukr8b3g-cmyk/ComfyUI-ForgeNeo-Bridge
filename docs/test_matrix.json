@@ -1,0 +1,826 @@
+{
+  "design_version": "1.0.0",
+  "status": "NOT_RUN",
+  "oracle": {
+    "id": "forge-neo@710f1e25",
+    "reference_repository": "Haoming02/sd-webui-forge-classic",
+    "reference_commit": "710f1e25fcac84d880cbccf27d11b2e3276e589e"
+  },
+  "registered_inventory_not_a_support_claim": {
+    "samplers": [
+      "dpmpp_2m",
+      "dpmpp_sde",
+      "dpmpp_2m_sde",
+      "dpmpp_3m_sde",
+      "dpmpp_2s_ancestral_rf",
+      "euler_ancestral",
+      "euler",
+      "er_sde",
+      "lcm",
+      "lms",
+      "heun",
+      "dpm_2",
+      "res_multistep",
+      "kohaku_lonyu_yog",
+      "restart",
+      "unipc",
+      "ddim",
+      "plms",
+      "dpmpp_2m_cfg_pp",
+      "euler_ancestral_cfg_pp",
+      "euler_cfg_pp"
+    ],
+    "schedulers": [
+      "automatic",
+      "karras",
+      "exponential",
+      "polyexponential",
+      "normal",
+      "simple",
+      "uniform",
+      "sgm_uniform",
+      "linear_quadratic",
+      "kl_optimal",
+      "ddim",
+      "align_your_steps",
+      "beta",
+      "turbo",
+      "bong_tangent",
+      "flow_match",
+      "flux2"
+    ]
+  },
+  "initial_gpu_qualification_candidates": [
+    {
+      "sampler": "euler",
+      "scheduler": "simple"
+    },
+    {
+      "sampler": "euler",
+      "scheduler": "beta"
+    },
+    {
+      "sampler": "er_sde",
+      "scheduler": "beta"
+    },
+    {
+      "sampler": "euler_ancestral",
+      "scheduler": "simple"
+    },
+    {
+      "sampler": "dpmpp_2m",
+      "scheduler": "karras"
+    },
+    {
+      "sampler": "dpmpp_2m_sde",
+      "scheduler": "exponential"
+    },
+    {
+      "sampler": "dpm_2",
+      "scheduler": "karras"
+    }
+  ],
+  "fixture_contracts": {
+    "anima": {
+      "model": "anima-Luc_v3D",
+      "observed_short_hash": "d6ee91d677",
+      "lora": "anima-turbo-lora-v0.2",
+      "observed_lora_short_hash": "1b55e40bdb1d",
+      "steps": 10,
+      "cfg": 1.5,
+      "resolution": [
+        1024,
+        1344
+      ],
+      "status": "FULL_HASH_AND_ENVIRONMENT_BINDING_REQUIRED"
+    },
+    "sd15": {
+      "fixture_id": "SD15_BASE_EPS",
+      "steps": 20,
+      "cfg": 7.0,
+      "resolution": [
+        512,
+        768
+      ],
+      "status": "LOCAL_ASSET_SELECTION_AND_HASH_REQUIRED"
+    },
+    "sdxl": {
+      "fixture_id": "SDXL_BASE_EPS",
+      "steps": 20,
+      "cfg": 5.0,
+      "resolution": [
+        1024,
+        1024
+      ],
+      "status": "LOCAL_ASSET_SELECTION_AND_HASH_REQUIRED"
+    }
+  },
+  "metrics": {
+    "exact_inputs": "Exact token IDs, masks, weights, initial and per-step noise, and sigmas under same scalar dtype/library version.",
+    "strong": {
+      "latent_relative_l2_max": 0.01,
+      "rgb_ssim_min": 0.98,
+      "rgb_rmse_range1_max": 0.02,
+      "ssim_parameters": {
+        "win_size": 11,
+        "gaussian_weights": true,
+        "sigma": 1.5,
+        "use_sample_covariance": false,
+        "data_range": 1.0,
+        "channel_axis": -1
+      },
+      "human_review": "No meaningful composition/face/hand/pose/object drift. No automatic crop/alignment/color adjustment permitted."
+    },
+    "exact_output": "torch.equal on final latent and equality of uncompressed RGB arrays; matching lossless file hashes not required.",
+    "rule": "Thresholds are proposed release criteria fixed by this spec, not empirical results. No retrospective relaxation after failed tests."
+  },
+  "tests": [
+    {
+      "id": "C01",
+      "stage": "CPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "Spec JSON roundtrip / schema / canonical hash",
+      "variants": "Float zero normalization; absent/zero/false/null separated; reordered object keys",
+      "acceptance": "Same semantic config produces the same config_hash; raw infotext remains byte-preserved after defined transport decoding.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "C02",
+      "stage": "CPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "Seed precision and overflow",
+      "variants": [
+        "0",
+        "1895162280",
+        "9007199254740993",
+        "18446744073709551615",
+        "18446744073709551616",
+        "-1"
+      ],
+      "acceptance": "Valid uint64 text roundtrips; overflow/reseed sentinel rejected before generation.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "C03",
+      "stage": "CPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "Missing metadata and provenance",
+      "variants": "Clip Skip absent; ENSD absent; version label without commit; unknown generation keys",
+      "acceptance": "No absent=>zero/default silently. Inferred behavioral settings require acknowledgment; unknown-affecting fields block strict.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "C04",
+      "stage": "CPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "Asset roles and LoRA identity",
+      "variants": "Module ordering swapped; duplicate basenames; short hash collision; duplicate LoRA declaration",
+      "acceptance": "Resolve by inspected asset family/role, never Module N position or fuzzy first hit. No double loading.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "C05",
+      "stage": "CPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "Prompt preservation and parameter lexer",
+      "variants": "Commas/colons/quotes/CRLF/underscore/Unicode; duplicate Beta aliases",
+      "acceptance": "Preserve prompt content; decode transport once; conflicting aliases block.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "C06",
+      "stage": "CPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "All registered scheduler names and Automatic resolution",
+      "variants": {
+        "registered_names": [
+          "automatic",
+          "karras",
+          "exponential",
+          "polyexponential",
+          "normal",
+          "simple",
+          "uniform",
+          "sgm_uniform",
+          "linear_quadratic",
+          "kl_optimal",
+          "ddim",
+          "align_your_steps",
+          "beta",
+          "turbo",
+          "bong_tangent",
+          "flow_match",
+          "flux2"
+        ],
+        "steps": [
+          1,
+          10,
+          20,
+          50
+        ]
+      },
+      "acceptance": "Registry parse coverage only. Compare meaningful pairs with pinned Forge oracle; nonapplicable pairs must reject, not fallback.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "C07",
+      "stage": "CPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "Sigma boundary semantics",
+      "variants": "discard requested off/on; mandatory-discard sampler; duplicate Beta timestep; min/max/rho; s_tmax=0",
+      "acceptance": "Exactly equal float32 CPU sigma vectors for supported combinations. Preserve actual length, not forced steps+1.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "C08",
+      "stage": "CPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "Sampler parameter effectiveness",
+      "variants": "eta, ENSD, s_noise, churn, SGM per sampler and predictor",
+      "acceptance": "Applicable settings follow pinned call graph; nonapplicable values retained and explicitly reported as not_applied.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "C09",
+      "stage": "CPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "Ancestral RNG stream parity",
+      "variants": {
+        "sources": [
+          "CPU",
+          "NV"
+        ],
+        "ensd": [
+          "0",
+          "31337"
+        ],
+        "batch": [
+          1,
+          2
+        ],
+        "subseed_strength": [
+          0.0,
+          0.3
+        ],
+        "draws": [
+          "initial",
+          "step1",
+          "step2",
+          "step3"
+        ]
+      },
+      "acceptance": "Bit-identical per-image draws/state snapshots with pinned source. No global RNG writes.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "C10",
+      "stage": "CPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "Noise bundle cache and branch reuse",
+      "variants": "Same bundle consumed twice, interleaved consumers, cancel/retry",
+      "acceptance": "Same first/step noise on each run. Input bundle is immutable; each sampler owns its generator.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "C11",
+      "stage": "CPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "Sampler loop oracle and prompt clock",
+      "variants": {
+        "registered_samplers": [
+          "dpmpp_2m",
+          "dpmpp_sde",
+          "dpmpp_2m_sde",
+          "dpmpp_3m_sde",
+          "dpmpp_2s_ancestral_rf",
+          "euler_ancestral",
+          "euler",
+          "er_sde",
+          "lcm",
+          "lms",
+          "heun",
+          "dpm_2",
+          "res_multistep",
+          "kohaku_lonyu_yog",
+          "restart",
+          "unipc",
+          "ddim",
+          "plms",
+          "dpmpp_2m_cfg_pp",
+          "euler_ancestral_cfg_pp",
+          "euler_cfg_pp"
+        ],
+        "model": "deterministic analytical denoiser (not a real checkpoint)"
+      },
+      "acceptance": "Supported finite outputs/denoiser call times match pinned oracle. Invalid pair produces an explicit unsupported/error result. Not a GPU-parity claim.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "C12",
+      "stage": "CPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "CFG schedules",
+      "variants": "[a:b:0.5], [a:b:5], [a|b], AND weights; CFG 1; Skip Early; NGMS boundaries",
+      "acceptance": "Same denoiser-call index, condition choice, weights and skips; never infer solely from sigma percent.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "C13",
+      "stage": "CPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "img2img step math",
+      "variants": "denoise 0, .5, .999, 1; scaled/exact; extra_noise 0/.1",
+      "acceptance": "Integer rounding, sigma slicing and errors match reference. Exact-step zero case is rejected if reference cannot form a valid schedule; no invented no-op.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "C14",
+      "stage": "CPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "Imported unsupported operations",
+      "variants": "Hires, inpaint, refiner, reference image, video, embeddings, external scheduling extensions",
+      "acceptance": "Retain raw fields; strict must block; no sampling substitution.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "G01",
+      "stage": "GPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "euler / simple",
+      "variants": {
+        "seeds": [
+          0,
+          42,
+          1895162280
+        ],
+        "ensd": "0"
+      },
+      "acceptance": "SAME_INPUTS + STRONG thresholds on each paired render; no aggregation hides a failed case.",
+      "status": "NOT_RUN",
+      "sampler": "euler",
+      "scheduler": "simple"
+    },
+    {
+      "id": "G02",
+      "stage": "GPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "euler / beta",
+      "variants": {
+        "seeds": [
+          1895162280
+        ],
+        "ensd": "0"
+      },
+      "acceptance": "SAME_INPUTS + STRONG thresholds on each paired render; no aggregation hides a failed case.",
+      "status": "NOT_RUN",
+      "sampler": "euler",
+      "scheduler": "beta"
+    },
+    {
+      "id": "G03",
+      "stage": "GPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "er_sde / beta",
+      "variants": {
+        "seeds": [
+          0,
+          42,
+          1895162280
+        ],
+        "ensd": "0"
+      },
+      "acceptance": "SAME_INPUTS + STRONG thresholds on each paired render; no aggregation hides a failed case.",
+      "status": "NOT_RUN",
+      "sampler": "er_sde",
+      "scheduler": "beta"
+    },
+    {
+      "id": "G04",
+      "stage": "GPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "euler_ancestral / simple",
+      "variants": {
+        "seeds": [
+          1895162280
+        ],
+        "ensd": [
+          "0",
+          "31337"
+        ]
+      },
+      "acceptance": "SAME_INPUTS + STRONG thresholds on each paired render; no aggregation hides a failed case.",
+      "status": "NOT_RUN",
+      "sampler": "euler_ancestral",
+      "scheduler": "simple"
+    },
+    {
+      "id": "G05",
+      "stage": "GPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "dpmpp_2m / karras",
+      "variants": {
+        "seeds": [
+          1895162280
+        ],
+        "ensd": "0"
+      },
+      "acceptance": "SAME_INPUTS + STRONG thresholds on each paired render; no aggregation hides a failed case.",
+      "status": "NOT_RUN",
+      "sampler": "dpmpp_2m",
+      "scheduler": "karras"
+    },
+    {
+      "id": "G06",
+      "stage": "GPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "dpmpp_2m_sde / exponential",
+      "variants": {
+        "seeds": [
+          1895162280
+        ],
+        "ensd": "0"
+      },
+      "acceptance": "SAME_INPUTS + STRONG thresholds on each paired render; no aggregation hides a failed case.",
+      "status": "NOT_RUN",
+      "sampler": "dpmpp_2m_sde",
+      "scheduler": "exponential"
+    },
+    {
+      "id": "G07",
+      "stage": "GPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "dpm_2 / karras",
+      "variants": {
+        "seeds": [
+          1895162280
+        ],
+        "ensd": "0",
+        "discard": "mandatory"
+      },
+      "acceptance": "SAME_INPUTS + STRONG thresholds on each paired render; no aggregation hides a failed case.",
+      "status": "NOT_RUN",
+      "sampler": "dpm_2",
+      "scheduler": "karras"
+    },
+    {
+      "id": "G08",
+      "stage": "GPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "GPU RNG branch",
+      "variants": "One Euler a / Simple pair per family, seed1895162280, GPU RNG, ENSD0",
+      "acceptance": "Compare per-step noise to same GPU/reference stack; CPU/NV success does not cover GPU RNG.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "G09",
+      "stage": "GPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "NV end-to-end",
+      "variants": "One Euler a / Simple pair per family, seed1895162280, NV RNG",
+      "acceptance": "STRONG; CPU unit tests alone do not certify GPU model execution.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "G10",
+      "stage": "GPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "Single-image versus batch2",
+      "variants": "Seeds1895162280/1895162281; compare Forge batch2 to Compat batch2, plus each implementation batch1",
+      "acceptance": "RNG exact; each same-batching cross-UI pair STRONG. Different batch shape is not assumed bit-identical.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "G11",
+      "stage": "GPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "Basic img2img",
+      "variants": "Frozen initial latent; Euler/Simple; denoise.5; scaled/exact",
+      "acceptance": "Compare sampling from identical latent first. End-to-end image/VAE encode parity is a separate assertion.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "A01",
+      "stage": "GPU",
+      "families": [
+        "anima"
+      ],
+      "case": "Anima Clip Skip no-op",
+      "variants": "Requested1/2/4; same model/TE",
+      "acceptance": "Forge outputs/conditioning unchanged; Compat effective clip_skip=null and last-layer strategy, not forced -2/-4.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "A02",
+      "stage": "GPU",
+      "families": [
+        "anima"
+      ],
+      "case": "Qwen/T5 adapter path",
+      "variants": "Weighted/plain/empty prompts; all four emphasis labels",
+      "acceptance": "Compare Qwen tokens/mask, T5 IDs/weights, pre-adapter and post-adapter outputs; preserve Forge-specific semantics, including unusual BREAK behavior.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "A03",
+      "stage": "GPU",
+      "families": [
+        "anima"
+      ],
+      "case": "Text/adapter precision audit",
+      "variants": "Record actual embedding, Qwen, adapter dtypes before/after LoRA",
+      "acceptance": "No dtype override on shared tensors. Declared dtype not actually applied must fail, not count as matched.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "A04",
+      "stage": "GPU",
+      "families": [
+        "anima"
+      ],
+      "case": "Uploaded Euler anchor",
+      "variants": "Original Forge infotext as exact prompt; same model+Turbo LoRA; do not reuse slightly different Comfy negative prompt",
+      "acceptance": "Generate a NEW lossless reference pair. Uploaded compressed results are observational regression only.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "A05",
+      "stage": "GPU",
+      "families": [
+        "anima"
+      ],
+      "case": "SGM requested on/off",
+      "variants": "Same Euler/Simple flow predictor",
+      "acceptance": "No extra sqrt(1+sigma^2) applied in flow branch; oracle-matching no-op.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "S01",
+      "stage": "GPU",
+      "families": [
+        "sd15"
+      ],
+      "case": "SD1.5 Clip Skip",
+      "variants": "1/2/4",
+      "acceptance": "Correct selected hidden state and final norm; compare same weights/precision.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "S02",
+      "stage": "CPU+GPU",
+      "families": [
+        "sd15"
+      ],
+      "case": "75-token chunking",
+      "variants": "Construct prompts at tokenizer lengths74/75/76 and149/150/151; commas near backtrack20; BREAK",
+      "acceptance": "Token/chunk equality exact; one representative boundary prompt rendered after CPU pass.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "S03",
+      "stage": "GPU",
+      "families": [
+        "sd15"
+      ],
+      "case": "SGM on/off",
+      "variants": "Euler/Simple, same initial noise",
+      "acceptance": "Reference noise scaling and final latent/image meet STRONG for both settings.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "X01",
+      "stage": "GPU",
+      "families": [
+        "sdxl"
+      ],
+      "case": "SDXL Clip Skip minimum",
+      "variants": "Requested1/2/4",
+      "acceptance": "Effective hidden selection=max(requested,2); 1/2 same; pooled output from correct path.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "X02",
+      "stage": "CPU+GPU",
+      "families": [
+        "sdxl"
+      ],
+      "case": "Dual encoder and micro-conditioning",
+      "variants": "Different L/G token lengths; non-square size; nonzero crop; explicit original/target",
+      "acceptance": "L/G concatenation, padding, pooled vector, H/W ordering and crop/target components match reference.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "X03",
+      "stage": "GPU",
+      "families": [
+        "sdxl"
+      ],
+      "case": "Empty-negative policy",
+      "variants": "Empty/nonempty negative × zero_empty_negative false/true",
+      "acceptance": "Zeroing follows pinned Forge option; nonempty prompt not accidentally zeroed.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "I01",
+      "stage": "CPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "Import and idle isolation",
+      "variants": "Fresh process: core-only vs extension installed-unused",
+      "acceptance": "No pip/network, no global function replacement, no RNG/state writes, no latent interception.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "I02",
+      "stage": "CPU+GPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "Execution and exception isolation",
+      "variants": "Success/cancel/error with two branched consumers",
+      "acceptance": "Shared MODEL/CLIP weights, options/hooks and all default RNG states unchanged by extension-owned code.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "I03",
+      "stage": "GPU",
+      "families": [
+        "minimax_h3",
+        "ltx"
+      ],
+      "case": "Video noninterference",
+      "variants": "A=baseline without extension; B=installed-unused; C=after Compat generation and error; fixed native workflow",
+      "acceptance": "Native success, full nested streams intact, no queue residue. Bit parity required where native self-repeat is bit-stable; otherwise baseline validity must be resolved first.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "I04",
+      "stage": "CPU",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "OOM and invalid model handling",
+      "variants": "Synthetic OOM; foreign MODEL; nested latent; unknown patch chain",
+      "acceptance": "No automatic tiled sampling or lowering size/steps/dtype; fail or explicitly unqualified exploratory report.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F01",
+      "stage": "Browser",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "Metadata formats",
+      "variants": "Three actual Forge WebP, three Comfy WebP; PNG/JPEG synthetic equivalents; odd RIFF chunk; UTF16 BOM cases",
+      "acceptance": "Correct extraction; native workflow wins over infotext; originals remain unchanged.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F02",
+      "stage": "Browser",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "Atomic drag/drop import",
+      "variants": "Forge image on canvas with integration on; integration off; JSON/video/native Comfy files",
+      "acceptance": "Only matching Forge metadata handled. Valid new workflow in separate tab; no existing graph destruction; unsupported files delegate once.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F03",
+      "stage": "Browser",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "Errors, duplicates and oversized metadata",
+      "variants": "Bad TIFF offsets, cycles, invalid JSON, duplicate conflicting fields, size limits, missing nodes/assets",
+      "acceptance": "Visible bounded error, no arbitrary eval/exec/import/download/path traversal, no partial graph replacement.",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F04",
+      "stage": "Browser",
+      "families": [
+        "anima",
+        "sd15",
+        "sdxl"
+      ],
+      "case": "Roundtrip persisted workflow",
+      "variants": "Save/load browser restart, cache hit, branch duplication; seed >2^53",
+      "acceptance": "Spec values/provenance/hash preserved; no dependence on live Python objects serialized to JSON.",
+      "status": "NOT_RUN"
+    }
+  ]
+}

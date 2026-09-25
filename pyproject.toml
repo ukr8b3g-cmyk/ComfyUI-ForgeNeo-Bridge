@@ -1,0 +1,18 @@
+[project]
+name = "comfyui-forgeneo-bridge"
+version = "1.0.0"
+description = "Opt-in, per-run Forge Neo compatibility nodes and metadata importer for ComfyUI"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+classifiers = ["Programming Language :: Python :: 3", "Operating System :: OS Independent"]
+
+[project.urls]
+Repository = "https://github.com/ukr8b3g-cmyk/ComfyUI-ForgeNeo-Bridge"
+Issues = "https://github.com/ukr8b3g-cmyk/ComfyUI-ForgeNeo-Bridge/issues"
+
+[tool.comfy]
+DisplayName = "ComfyUI-ForgeNeo-Bridge"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

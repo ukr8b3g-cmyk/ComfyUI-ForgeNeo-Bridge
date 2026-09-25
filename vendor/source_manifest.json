@@ -1,0 +1,18 @@
+{
+  "sampling.py": {
+    "source": "forge/modules_forge/packages/k_diffusion/sampling.py",
+    "sha256": "3464c7a5a76080201f2492da2a9495b497f5b153779f61751ad7d337ea8fbaa2"
+  },
+  "prompt_parser.py": {
+    "source": "forge/modules/prompt_parser.py",
+    "sha256": "226c5365b94e2030a2a9281ae0fa3b816147eb25e30bdaa5d3247b33e3457b79"
+  },
+  "parsing.py": {
+    "source": "forge/backend/text_processing/parsing.py",
+    "sha256": "07f84584e4e80e1a62cab5446605014beb306e95f9ca4c05467ddf9f2ae119f7"
+  },
+  "rng_philox.py": {
+    "source": "forge/modules/rng_philox.py",
+    "sha256": "45c999981575b90bc4110d0af98722a1410239afa5b23ba810f8f3229bd7c02e"
+  }
+}

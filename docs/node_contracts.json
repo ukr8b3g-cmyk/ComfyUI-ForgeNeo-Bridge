@@ -1,0 +1,108 @@
+{
+  "schema_version": "1.0.0",
+  "implementation_status": "NOT_IMPLEMENTED",
+  "nodes": [
+    {
+      "class_id": "ForgeCompatSpec",
+      "display_name": "Forge Compat Import / Spec",
+      "required_inputs": {
+        "source_mode": "manual|image|infotext|spec_json",
+        "profile": "forge-neo@710f1e25",
+        "policy": "strict|exploratory",
+        "payload": "STRING",
+        "overrides_json": "STRING"
+      },
+      "optional_inputs": {
+        "image_file": "STRING (validated input-relative file selector)"
+      },
+      "outputs": [
+        [
+          "spec",
+          "FORGE_GENERATION_SPEC"
+        ],
+        [
+          "report",
+          "STRING"
+        ]
+      ]
+    },
+    {
+      "class_id": "ForgeCompatText",
+      "display_name": "Forge Compat Text",
+      "required_inputs": {
+        "spec": "FORGE_GENERATION_SPEC",
+        "clip": "CLIP"
+      },
+      "optional_inputs": {},
+      "outputs": [
+        [
+          "conditioning",
+          "FORGE_CONDITIONING"
+        ],
+        [
+          "report",
+          "STRING"
+        ]
+      ]
+    },
+    {
+      "class_id": "ForgeCompatNoise",
+      "display_name": "Forge Compat Noise",
+      "required_inputs": {
+        "spec": "FORGE_GENERATION_SPEC",
+        "model": "MODEL"
+      },
+      "optional_inputs": {
+        "input_latent": "LATENT (required for img2img)"
+      },
+      "outputs": [
+        [
+          "latent",
+          "LATENT"
+        ],
+        [
+          "noise",
+          "FORGE_NOISE_BUNDLE"
+        ],
+        [
+          "report",
+          "STRING"
+        ]
+      ]
+    },
+    {
+      "class_id": "ForgeCompatSampler",
+      "display_name": "Forge Compat Sampler",
+      "required_inputs": {
+        "spec": "FORGE_GENERATION_SPEC",
+        "model": "MODEL",
+        "conditioning": "FORGE_CONDITIONING",
+        "noise": "FORGE_NOISE_BUNDLE",
+        "latent_image": "LATENT",
+        "trace_level": "none|summary|tensors"
+      },
+      "optional_inputs": {},
+      "outputs": [
+        [
+          "latent",
+          "LATENT"
+        ],
+        [
+          "sigmas",
+          "SIGMAS"
+        ],
+        [
+          "report",
+          "STRING"
+        ]
+      ]
+    }
+  ],
+  "invariants": [
+    "The single Spec is authoritative; downstream seed/steps/CFG overrides are prohibited.",
+    "Tensors, mutable generators, model references and callable objects never enter JSON Spec.",
+    "All bundles must match the Spec config_hash and live model/asset/shape binding.",
+    "No automatic prompt LoRA loading inside sampler.",
+    "No implicit native sampler fallback."
+  ]
+}

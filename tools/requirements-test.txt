@@ -1,0 +1,9 @@
+# Developer/CI only. NOT read during Comfy import. Host production env is unchanged.
+numpy==2.3.5
+scipy==1.17.0
+Pillow==12.3.0
+pytest==9.0.2
+jsonschema==4.26.0
+torchsde==0.2.6
+trampoline==0.1.2
+tqdm==4.67.3

@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0.0",
+  "implementation_version": "1.0.0",
+  "reference_commit": "710f1e25fcac84d880cbccf27d11b2e3276e589e",
+  "qualified_profiles": [],
+  "gpu_parity": "NOT_RUN",
+  "live_comfy_frontend": "NOT_RUN",
+  "h3_ltx_end_to_end": "NOT_RUN",
+  "note": "CPU and isolated UI/API results are recorded separately in VALIDATION.md. Completed generation is not Strong Parity certification."
+}
