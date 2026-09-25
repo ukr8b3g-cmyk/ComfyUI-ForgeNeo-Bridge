@@ -12,7 +12,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: python -m pip download --no-deps --only-binary=:all: --dest wheels torchsde==0.2.6 trampoline==0.1.2
+      - run: |
+          python -m pip download --no-deps --only-binary=:all: --dest wheels torchsde==0.2.6 trampoline==0.1.2
       - uses: actions/upload-artifact@v4
         with:
           name: cpu-audit-wheels
