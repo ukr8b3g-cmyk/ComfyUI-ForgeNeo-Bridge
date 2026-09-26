@@ -73,23 +73,23 @@ Wan動画は対象外です。Lumina2／PiDは対応レシピがなく、誤っ�
 
 <img src="docs/media/settings.png" width="350" alt="ForgeNeo Bridge Hires Settingsの基本項目">
 
-通常のSettingsとHires Settingsは、それぞれ対応するSamplerへ接続します。**新規ノード・画像読み込み時は、画像のようにSampling adjustmentsが初期ONです。** Hiresの前後段で互換・補正スイッチを操作すると、接続された相手の同じスイッチも連動します。
+通常のSettingsとHires Settingsは、それぞれ対応するSamplerへ接続します。**この画像はSampling adjustmentsをONにした例です。新規読み込み時の初期値はOFFです。** Hiresの前後段で互換・補正スイッチを操作すると、接続された相手の同じスイッチも連動します。
 
 | 項目 | 役割 |
 |---|---|
 | **Forge compatibility — 初期ON** | Forge用のテキスト処理・初期ノイズなどを使う親スイッチ。OFFでは同じBridgeノード内でComfyUI標準処理を使います。標準ノードへの変換ではなく、OFFでもBridgeのインストールは必要です |
-| **Sampling adjustments — 初期ON** | 共通処理を利用しつつ、再現性に影響するサンプリング・Sigma・途中ノイズ・CFG補助の差を補います。既に互換性がある共通部分を使うだけならONは不要です |
+| **Sampling adjustments — 初期OFF** | 共通処理を利用しつつ、再現性に影響するサンプリング・Sigma・途中ノイズ・CFG補助の差を補います。既に互換性がある共通部分を使うだけならONは不要です |
 | Clip Skip | テキストエンコーダーの層の扱い。SD1.5／SDXLとAnima・LLM系では適用が異なります。Animaでは非適用です |
 | ENSD | Eta Noise Seed Delta。追加ノイズの乱数系列に関係する値です。補正OFFでは保存されますが適用されません |
 | Import warnings | 不足・推定・未対応事項を表示。同じボタンをもう一度押すと閉じます |
 
-**Sampling adjustmentsは内部処理の互換性を高める補助機能であり、同一画像や近いレンダリング結果を保証しません。ONにすると必ず元画像へ近づく、という意味でもありません。** 同名サンプラーでも途中ノイズやスケジュールが違う場合があります。補正項目がない旧ワークフローは従来動作を守るためONで読み込み、新規ノード／画像ドロップもONです。保存済みワークフローで明示したON/OFFは維持します。
+**Sampling adjustmentsは内部処理の互換性を高める補助機能であり、同一画像や近いレンダリング結果を保証しません。ONにすると必ず元画像へ近づく、という意味でもありません。** 同名サンプラーでも途中ノイズやスケジュールが違う場合があります。補正項目がない旧ワークフローは従来動作を守るためONで読み込み、新規ノード／画像ドロップはOFFです。
 
 | Forge compatibility | Sampling adjustments | 動作 |
 |---|---|---|
 | OFF | 非適用 | ComfyUI標準のテキスト・ノイズ・KSampler処理 |
-| ON | OFF | Forge用テキスト・初期ノイズ＋ComfyUIのSampler／Sigma列 |
-| ON | ON（初期値） | 上記にForge向けのサンプリング差分補正を適用 |
+| ON | OFF（初期値） | Forge用テキスト・初期ノイズ＋ComfyUIのSampler／Sigma列 |
+| ON | ON | 上記にForge向けのサンプリング差分補正を適用 |
 
 ### 詳細設定：必要な項目だけ展開
 
@@ -262,23 +262,23 @@ Wan video is outside scope. Lumina2/PiD have no supported recipe and are not rou
 
 <img src="docs/media/settings.png" width="350" alt="ForgeNeo Bridge Hires Settings basic controls">
 
-Base and Hires Settings connect to their respective samplers. **New nodes and image imports default to adjustments ON, as shown in this screenshot.** Changing compatibility or adjustments in a connected Hires pass synchronizes the same switch in the other pass.
+Base and Hires Settings connect to their respective samplers. **This screenshot shows adjustments enabled; the default for a new import is OFF.** Changing compatibility or adjustments in a connected Hires pass synchronizes the same switch in the other pass.
 
 | Control | Purpose |
 |---|---|
 | **Forge compatibility — default ON** | Master switch for Forge text processing, initial noise and related behavior. OFF invokes standard ComfyUI processing inside the same Bridge nodes. It does not convert them to standard nodes; Bridge must remain installed |
-| **Sampling adjustments — default ON** | Uses shared processing and compensates for sampling, sigma, intermediate-noise and CFG differences that affect reproducibility. Already compatible shared operations do not require this to be ON |
+| **Sampling adjustments — default OFF** | Uses shared processing and compensates for sampling, sigma, intermediate-noise and CFG differences that affect reproducibility. Already compatible shared operations do not require this to be ON |
 | Clip Skip | Encoder-layer handling. SD1.5/SDXL differ from Anima/LLM encoders; it is inactive for Anima |
 | ENSD | Eta Noise Seed Delta, affecting the additional-noise random sequence. Retained but inactive with adjustments OFF |
 | Import warnings | Missing, inferred and unsupported information. Click the same control again to close it |
 
-**Sampling adjustments improves internal compatibility; it does not guarantee identical or visually similar images, and turning it ON need not make the result closer to Forge.** Even similarly named solvers can use different intermediate noise or schedules. Older workflows without this field load with adjustments ON to preserve prior behavior; new nodes and imports also default to ON. Explicit ON/OFF choices in saved workflows are preserved.
+**Sampling adjustments improves internal compatibility; it does not guarantee identical or visually similar images, and turning it ON need not make the result closer to Forge.** Even similarly named solvers can use different intermediate noise or schedules. Older workflows without this field load with adjustments ON to preserve prior behavior; new nodes and imports default to OFF.
 
 | Forge compatibility | Sampling adjustments | Processing |
 |---|---|---|
 | OFF | Inactive | Standard ComfyUI text, noise and KSampler |
-| ON | OFF | Forge text/initial noise + ComfyUI samplers and sigma sequences |
-| ON | ON (default) | The above with Forge-oriented sampling adjustments |
+| ON | OFF (default) | Forge text/initial noise + ComfyUI samplers and sigma sequences |
+| ON | ON | The above with Forge-oriented sampling adjustments |
 
 ### Advanced sections
 

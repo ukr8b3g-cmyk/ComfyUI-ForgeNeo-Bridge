@@ -177,7 +177,7 @@ test('Hires mode propagates through latent and image nodes, leaving unrelated se
     assert.equal(widget(unrelated,'sampling_adjustments').value,false);
 });
 
-test('explicit adjustment OFF stays OFF after save, old files migrate ON, help follows locale',()=>{
+test('new adjustment default stays OFF after save, old files migrate ON, help follows locale',()=>{
     const node=createNode();
     assert.equal(widget(node,'sampling_adjustments').value,false);
     const saved=node.serialize(),restored=createNode();restored.configure(saved);

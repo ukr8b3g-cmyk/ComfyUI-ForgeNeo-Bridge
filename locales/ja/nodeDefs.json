@@ -254,7 +254,7 @@
         "tooltip": "ON: Forgeのテキスト処理・初期ノイズを使用。サンプリング補正は下の設定で選びます。OFF: ComfyUI標準のテキスト処理とKSamplerを使用。どちらもBridgeのインストールは必要です。"
       },
       "sampling_adjustments": {
-        "tooltip": "初期値ON。Forge Neo互換ONのとき、OFFはComfyUIのサンプラー・スケジュールを使用し、ONはForge向けの内部処理差を補正します。画像の一致や見た目の近さは保証しません。旧ワークフローは従来動作を保つためONで読み込みます。"
+        "tooltip": "初期値OFF。Forge Neo互換ONのとき、OFFはComfyUIのサンプラー・スケジュールを使用し、ONはForge向けの内部処理差を補正します。画像の一致や見た目の近さは保証しません。旧ワークフローは従来動作を保つためONで読み込みます。"
       }
     },
     "outputs": {

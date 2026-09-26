@@ -50,7 +50,7 @@ def test_missing_assets_still_create_complete_editable_graph():
     assert all('title' not in n for n in plan['nodes'] if n['type'] in
                ('CheckpointLoaderSimple','CLIPLoader','VAELoader','LoraLoader','EmptyLatentImage','VAEDecode','SaveImage'))
     assert set(settings['values'])==set(ForgeNeoBridgeSettings.INPUT_TYPES()['required'])|{'sampling_adjustments'}
-    assert settings['values']['sampling_adjustments'] is True
+    assert settings['values']['sampling_adjustments'] is False
     assert json.loads(settings['values']['source_json'])['source']['raw_infotext']==TEXT
     assert any(n['type']=='LoraLoader' and n['values']['strength_model']==0.7 for n in plan['nodes'])
     assert len(plan['edges'])>=8

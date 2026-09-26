@@ -108,7 +108,7 @@
       "class_id": "ForgeNeoBridgeSettings",
       "display_name": "ForgeNeo Bridge Settings",
       "required_inputs": {"family": "auto|anima|sd15|sdxl", "mode": "txt2img|img2img", "width": "INT (legacy fallback without latent)", "height": "INT (legacy fallback without latent)", "batch_size": "INT (legacy fallback without latent)", "source_json": "STRING (provenance only)", "details": "text, RNG, sampling, CFG, img2img and SDXL widgets"},
-      "optional_inputs": {"forge_compatibility": "BOOLEAN (default true; false explicitly selects core Comfy processing)", "sampling_adjustments": "BOOLEAN (default true; optional Forge sampling corrections while compatibility is on; old workflows migrate to true)"},
+      "optional_inputs": {"forge_compatibility": "BOOLEAN (default true; false explicitly selects core Comfy processing)", "sampling_adjustments": "BOOLEAN (default false; optional Forge sampling corrections while compatibility is on; old workflows migrate to true)"},
       "outputs": [["settings", "FORGE_SETTINGS"]]
     },
     {

@@ -404,7 +404,7 @@ def reconstruction_plan(doc, positive, inventory):
               'crop_x':(cfg['sdxl'] or {}).get('crop_left',0),
               'crop_y':(cfg['sdxl'] or {}).get('crop_top',0),
               'zero_empty_negative':(cfg['sdxl'] or {}).get('zero_empty_negative',False),
-              'source_json':canonical(doc),'sampling_adjustments':True}
+              'source_json':canonical(doc),'sampling_adjustments':False}
     settings = add('ForgeNeoBridgeSettings',values,'ForgeNeo Bridge Settings',
                    {'forge_neo_bridge':{'unsupported':doc['unsupported'],'unresolved':doc['unresolved']}})
     pos = add('ForgeNeoBridgeTextEncode',{'text':positive},'ForgeNeo Bridge Positive')
