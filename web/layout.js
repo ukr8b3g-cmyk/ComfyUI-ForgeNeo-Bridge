@@ -2,6 +2,7 @@ import {tr} from './i18n.js';
 
 const SAMPLERS = new Set(['ForgeNeoBridgeKSampler','KSampler','KSamplerAdvanced','SamplerCustomAdvanced','ForgeCompatSampler']);
 const IMAGE_OUTPUTS = new Set(['SaveImage','PreviewImage']);
+export const BRIDGE_SAMPLER_WIDTH = 290;
 // Leave room for the sampler's live preview and for a readable output image.
 const SAMPLER_HEIGHT = 500, IMAGE_SIZE = [510,650];
 const GROUP_PADDING = {top:100,side:30,bottom:30};
@@ -100,6 +101,10 @@ export function planLayout(nodes, links, origin = [100,130]) {
             let y=origin[1],width=0;
             for (const n of column) {
                 let w=n.size?.[0] || 300,h=n.size?.[1] || 160;
+                if (n.type === 'ForgeNeoBridgeKSampler' && !n.flags?.collapsed && w < BRIDGE_SAMPLER_WIDTH) {
+                    w=BRIDGE_SAMPLER_WIDTH;
+                    sizes.set(n,[w,h]);
+                }
                 if (IMAGE_OUTPUTS.has(n.type) && !n.flags?.collapsed) {
                     w=Math.max(w,IMAGE_SIZE[0]);h=Math.max(h,IMAGE_SIZE[1]);
                     sizes.set(n,[w,h]);

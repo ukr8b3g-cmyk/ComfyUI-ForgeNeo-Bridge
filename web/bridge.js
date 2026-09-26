@@ -1,5 +1,5 @@
 import { app } from '../../scripts/app.js';
-import {layoutMenu} from './layout.js';
+import {layoutMenu, BRIDGE_SAMPLER_WIDTH} from './layout.js';
 import { api } from '../../scripts/api.js';
 import { buildDetached, captureCanvas, makeDropHandler, placeReconstructed, preserveMissingCombo, scalarValue } from './bridge_core.js';
 
@@ -240,6 +240,7 @@ app.registerExtension({
         installSettingsAccordion(node, app);
         installSeedControls(node, app);
         if ((node.comfyClass || node.type) === 'ForgeNeoBridgeKSampler') {
+            node.setSize?.([BRIDGE_SAMPLER_WIDTH,node.size[1]]);
             const control = node.widgets?.find(w => w.name === 'seed')?.linkedWidgets?.[0];
             if (control) Object.defineProperty(control,'tooltip',{get:()=>tr(app,
                 'fixedは固定、incrementは+1、decrementは−1、randomizeはランダムにシードを変更します。変更のタイミングはComfyUIの設定に従います。',
