@@ -81,6 +81,9 @@ def lora(name,strength,node):
     ([lora('a',1,'a'),lora('b',1,'b')],[lora('b',.5,'b')],[('a',1,0),('b',1,.5)]),
     ([lora('a',.2,'only'),lora('a',.7,'both')],[lora('a',.3,'both')],[('a',.2,0),('a',.7,.3)]),
     ([lora('a',.7,'both')],[lora('a',.1,'only'),lora('a',.3,'both')],[('a',0,.1),('a',.7,.3)]),
+    ([lora('a',.2,'model-only'),lora('b',.7,'both')],
+     [lora('b',.3,'both'),lora('a',.1,'clip-only')],
+     [('a',.2,0),('b',.7,.3),('a',0,.1)]),
     ([],[lora('a',.3,'a')],[('a',0,.3)]),
 ])
 def test_lora_independent_branches_and_duplicate_events(m,c,expected):
@@ -96,6 +99,20 @@ def test_lora_conflicting_common_order_rejected():
     with pytest.raises(BridgeError,match='different LoRA order'):
         adapter._resources([root,lora('a',1,'a'),lora('b',1,'b')],
                            [root,lora('b',1,'other-b'),lora('a',1,'other-a')])
+
+
+def test_lora_shared_node_separates_independent_same_name_events():
+    prompt={'1':{'class_type':'CheckpointLoaderSimple','inputs':{'ckpt_name':'base.safetensors'}},
+            '2':{'class_type':'LoraLoaderModelOnly','inputs':{'model':['1',0],'lora_name':'same.safetensors','strength_model':.2}},
+            '3':{'class_type':'LoraLoader','inputs':{'model':['2',0],'clip':['1',1],'lora_name':'shared.safetensors',
+                                                   'strength_model':.7,'strength_clip':.3}},
+            '4':{'class_type':'LoraLoader','inputs':{'model':['3',0],'clip':['3',1],'lora_name':'same.safetensors',
+                                                   'strength_model':0.,'strength_clip':.1}}}
+    reader=GraphReader(prompt)
+    assets,loras=adapter._resources(reader.trace(['3',0],'model'),reader.trace(['4',1],'text_encoder'))
+    names={a['asset_id']:a['relative_name'] for a in assets}
+    assert [(names[x['asset_id']],x['strength_model'],x['strength_text_encoder']) for x in loras]==[
+        ('same.safetensors',.2,0),('shared.safetensors',.7,.3),('same.safetensors',0,.1)]
 
 
 def test_model_only_graph_provenance():

@@ -40,10 +40,15 @@ def _resources(model_chain, clip_chain):
     by_node = {x['node_id']:i for i,x in enumerate(clip_loras) if 'node_id' in x}
     pairs = {i:by_node[x['node_id']] for i,x in enumerate(model_loras) if x.get('node_id') in by_node}
     used = set(pairs.values())
-    for i,m in enumerate(model_loras):
-        if i in pairs:continue
-        match = next((j for j,c in enumerate(clip_loras) if j not in used and c['name']==m['name']),None)
-        if match is not None:pairs[i]=match;used.add(match)
+    shared = sorted(pairs.items())
+    if [j for _,j in shared] != sorted(used):
+        raise BridgeError('ASSET_BINDING_MISMATCH','MODEL and CLIP use different LoRA order')
+    bounds = [(-1,-1),*shared,(len(model_loras),len(clip_loras))]
+    for (left_i,left_j),(right_i,right_j) in zip(bounds,bounds[1:]):
+        for i in range(left_i+1,right_i):
+            match = next((j for j in range(left_j+1,right_j)
+                          if j not in used and clip_loras[j]['name']==model_loras[i]['name']),None)
+            if match is not None:pairs[i]=match;used.add(match)
     ordered = sorted(pairs.items())
     if [j for _,j in ordered] != sorted(used):
         raise BridgeError('ASSET_BINDING_MISMATCH','MODEL and CLIP use different LoRA order')

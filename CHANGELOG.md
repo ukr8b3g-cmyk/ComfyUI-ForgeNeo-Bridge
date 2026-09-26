@@ -3,7 +3,7 @@
 ## 2026-09-27 — deep-audit fixes
 
 - Keep negative conditioning for the three CFG++ samplers at CFG 1, including empty negatives and transient CFG 1 controls. Align Qwen Edit positive/negative reference conditioning with ComfyUI's native Edit nodes.
-- Preserve independently applied and repeated LoRAs in imported Bridge graphs. Validate only active batch/variation/ENSD seed offsets before RNG creation.
+- Preserve independently applied and repeated LoRAs in imported Bridge graphs, including same-name loaders on opposite sides of a shared loader. Validate only active batch/variation/ENSD seed offsets before RNG creation.
 - Accept Forge's `Shift: 0` model-default sentinel for Z-Image and ERNIE imports while preserving the original request. Replace only arrangement frames whose saved ownership and current members match; retain manual, partial and unmarked legacy frames.
 - Make summary tracing lighter and repair the synthetic text smoke fixture. Update documentation and CPU/frontend regressions without changing the default-OFF Sampling adjustments setting.
 
