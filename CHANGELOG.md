@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-27 — sampling adjustment defaults
+
+- Enable Sampling adjustments by default for new Settings nodes and image imports, including Hires Settings. Preserve explicit ON/OFF choices in saved workflows. Update Japanese/English documentation and hover help; image similarity is still not guaranteed.
+
 ## 2026-09-26 — image-to-workflow import and Hires.fix
 
 - Publish a Japanese-first / English-second illustrated README, original-resolution comparison images, cropped node guides and localized arrangement videos. Explain defaults, model-specific verification limits and the remaining Hires.fix output differences.

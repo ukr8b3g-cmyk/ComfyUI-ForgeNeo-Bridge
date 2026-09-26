@@ -254,7 +254,7 @@
         "tooltip": "ON uses Forge text processing and initial noise; the next switch controls sampling adjustments. OFF uses core ComfyUI text encoding and KSampler. Bridge must remain installed in both modes."
       },
       "sampling_adjustments": {
-        "tooltip": "Default OFF. With Forge compatibility ON, OFF uses ComfyUI samplers and schedules; ON applies Forge sampling adjustments. Neither identical nor visually similar images are guaranteed. Older workflows load with this ON to preserve their behavior."
+        "tooltip": "Default ON. With Forge compatibility ON, OFF uses ComfyUI samplers and schedules; ON applies Forge sampling adjustments. Neither identical nor visually similar images are guaranteed. Older workflows load with this ON to preserve their behavior."
       }
     },
     "outputs": {

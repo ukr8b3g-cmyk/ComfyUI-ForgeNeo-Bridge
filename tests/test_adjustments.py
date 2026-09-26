@@ -9,7 +9,7 @@ from fnb.bridge.schedules import step_plan,core_sigmas
 from fnb.bridge.runtime import unused_parameters
 
 def test_new_default_and_legacy_spec(document):
-    assert ForgeNeoBridgeSettings.INPUT_TYPES()['optional']['sampling_adjustments'][1]['default'] is False
+    assert ForgeNeoBridgeSettings.INPUT_TYPES()['optional']['sampling_adjustments'][1]['default'] is True
     old=finalize(document)
     assert old.require_executable()['sampling'].get('adjustments',True) is True
     document['effective']['sampling']['adjustments']=False

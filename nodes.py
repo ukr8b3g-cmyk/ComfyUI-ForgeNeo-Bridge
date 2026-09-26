@@ -175,7 +175,7 @@ class ForgeNeoBridgeSettings:
             'zero_empty_negative':('BOOLEAN',{'default':False}),
             'source_json':('STRING',{'multiline':True,'default':'{}'}),
         },'optional':{'forge_compatibility':('BOOLEAN',{'default':True}),
-                       'sampling_adjustments':('BOOLEAN',{'default':False})}}
+                       'sampling_adjustments':('BOOLEAN',{'default':True})}}
     RETURN_TYPES=('FORGE_SETTINGS',);RETURN_NAMES=('settings',)
     FUNCTION='prepare';CATEGORY=CATEGORY
     DESCRIPTION='Editable Forge settings. Source JSON is provenance only; current widgets drive execution.'

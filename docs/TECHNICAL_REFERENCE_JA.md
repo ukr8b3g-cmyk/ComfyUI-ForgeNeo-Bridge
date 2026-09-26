@@ -52,7 +52,7 @@ Samplerのプレビューが縦に伸びることを見込み、展開中のSamp
 
 Forge画像から**新規に再構築**する際には、この配置を自動適用します。ComfyUIワークフロー付き画像や保存済みJSONは保存された位置を復元し、自動では並べ替えません。必要なときに右クリックの操作を使ってください。
 
-**Forge Neo互換は初期ON、サンプリング差分補正は初期OFFです。** 互換ONではForge用テキスト・初期ノイズを使い、サンプリングの内部処理は独立した補正スイッチで選びます。互換OFFでは同じBridgeノードの内部でComfyUIの`CLIPTextEncode`、明示したClip Skipの`CLIPSetLastLayer`、`KSampler`を呼び出します。現在のPrompt・Seed・Steps・CFG・Sampler・Scheduler・denoiseと、接続したモデル／Latentを使います。元画像の設定は出典として保持し、編集値へ戻しません。OFFでもBridgeのインストールは必要です。標準ノードへの変換機能ではありません。
+**Forge Neo互換は初期ON、サンプリング差分補正は初期ONです。** 互換ONではForge用テキスト・初期ノイズを使い、サンプリングの内部処理は独立した補正スイッチで選びます。互換OFFでは同じBridgeノードの内部でComfyUIの`CLIPTextEncode`、明示したClip Skipの`CLIPSetLastLayer`、`KSampler`を呼び出します。現在のPrompt・Seed・Steps・CFG・Sampler・Scheduler・denoiseと、接続したモデル／Latentを使います。元画像の設定は出典として保持し、編集値へ戻しません。OFFでもBridgeのインストールは必要です。標準ノードへの変換機能ではありません。
 
 Bridgeの全8ノードの各入力・出力・説明、およびSettingsのアコーデオンとシード更新コントロールにマウスオーバーヘルプがあります。ComfyUIの言語設定が日本語なら日本語、それ以外は英語で表示します。ComfyUIの「Enable Tooltips」がONのときに表示されます。
 
@@ -92,7 +92,7 @@ Clip SkipはLLM系ではForge側も非適用です。Flux.1も使用するCLIP p
 
 txt2imgでは標準の`EmptyLatentImage`がKSamplerの`input_latent`へ接続され、サイズとバッチ数はこのLatentノードで編集します。img2imgでは`LoadImage → VAEEncode`のLatentを接続します。Settingsに残るサイズ・バッチ数は、接続のない旧ワークフロー用の詳細設定です。
 
-SD1.5・SDXL・AnimaのHires.fixは、対応する設定を2段階のワークフローへ復元します。Lanczosは`1回目のSampler → VAEDecode → ImageScale → VAEEncode → Hires Sampler → VAEDecode`です。1回目はdenoise=1、2回目は記録されたHires steps・CFG・denoiseを使います。Sampling adjustmentsがONならForgeのexact_steps方式、OFF（初期値）ならComfyUI標準のステップ・denoise解釈です。Seed・RNG・ENSD・Clip Skip・Eta・sigma除去設定を両方に保持し、適用の有無は互換・補正スイッチに従います。SDXLの2回目のサイズ条件は接続Latentに追従します。AnimaのHires Shiftは2回目のSettingsへ反映し、補正ONで適用します。Hires用Prompt・Sampler・Schedulerの変更と、同じCheckpoint/Moduleを使う指定にも対応します。
+SD1.5・SDXL・AnimaのHires.fixは、対応する設定を2段階のワークフローへ復元します。Lanczosは`1回目のSampler → VAEDecode → ImageScale → VAEEncode → Hires Sampler → VAEDecode`です。1回目はdenoise=1、2回目は記録されたHires steps・CFG・denoiseを使います。Sampling adjustmentsがON（初期値）ならForgeのexact_steps方式、OFFならComfyUI標準のステップ・denoise解釈です。Seed・RNG・ENSD・Clip Skip・Eta・sigma除去設定を両方に保持し、適用の有無は互換・補正スイッチに従います。SDXLの2回目のサイズ条件は接続Latentに追従します。AnimaのHires Shiftは2回目のSettingsへ反映し、補正ONで適用します。Hires用Prompt・Sampler・Schedulerの変更と、同じCheckpoint/Moduleを使う指定にも対応します。
 
 Latent拡大は`Latent`（bilinear）、`Latent (bicubic)`、`Latent (nearest-exact)`に対応し、標準`LatentUpscale`を接続します。別Checkpoint/Module/LoRAへの切替、学習型upscaler、antialias付きLatentは未対応です。BridgeのHiresレシピが扱えない設定では、理由付きのエラーを返し、通常のtxt2imgに見える不完全なグラフを作りません。
 
@@ -165,17 +165,17 @@ Sampling adjustmentsは、Forge NeoとComfyUIの**サンプリング処理の互
 
 **互換性の向上は、生成画像の一致や、近似した・見た目の近いレンダリング結果を保証するものではありません。** ONにすれば必ずForgeの出力へ近づく、という意味でもありません。同じモデル・プロンプト・シード・ステップ数でも、数値精度、実行環境、エンコーダーやVAE、未対応の処理差などによって、構図・色・細部が変わる場合があります。目的は処理と設定の対応を改善することであり、画像の類似度や品質の保証ではありません。
 
-Settingsの`Forge compatibility`の直下に配置した独立スイッチです。新規ノード・画像ドロップは**初期OFF**です。この項目がない旧ワークフローは、従来の計算を保つためONで読み込みます。保存後のON/OFFは維持します。旧4ノードのSpecも、明示指定がなければ従来の補正経路を使います。
+Settingsの`Forge compatibility`の直下に配置した独立スイッチです。新規ノード・画像ドロップは**初期ON**です。この項目がない旧ワークフローは、従来の計算を保つためONで読み込みます。保存後のON/OFFは維持します。旧4ノードのSpecも、明示指定がなければ従来の補正経路を使います。
 
 | Forge compatibility | Sampling adjustments | 実行する処理 |
 |---|---|---|
 | OFF | 適用なし | ComfyUI標準のテキスト処理・ノイズ・KSampler |
-| ON | OFF（初期値） | Forgeのテキスト処理・Clip Skip・初期ノイズを保ち、ComfyUIのサンプラーとsigma列を使用 |
-| ON | ON | 上記にForge向けのサンプリング・sigma・途中乱数・CFG補助の補正を適用 |
+| ON | OFF | Forgeのテキスト処理・Clip Skip・初期ノイズを保ち、ComfyUIのサンプラーとsigma列を使用 |
+| ON | ON（初期値） | 上記にForge向けのサンプリング・sigma・途中乱数・CFG補助の補正を適用 |
 
 補正OFFではENSD、Eta、Churn、sigma範囲／rho／Betaパラメーター、手動discard、SGM倍率、Shift、NGMS、Skip Early CFG、Forgeのimg2imgステップ方式と追加ノイズは**保存のみで非適用**です。Clip Skip、乱数方式・サブシード・シード基準サイズ、テキスト処理、SDXL条件は互換ONなら残ります。実行レポートに使用経路と非適用項目を記録します。ComfyUIのAutomatic／Uniformは`normal`への対応付け、DDIMは`ddim_uniform`への名称対応を使います。Forge専用スケジューラーを使う場合は補正ONにしてください。別の方式へ黙って置換はしません。
 
-English: **Sampling adjustments is OFF by default.** It improves internal sampling compatibility; it does not guarantee identical or visually similar images, and enabling it need not bring the result closer to Forge. Forge compatibility remains a separate master switch. Older workflows without this field load with adjustments ON to preserve existing behavior.
+English: **Sampling adjustments is ON by default.** It improves internal sampling compatibility; it does not guarantee identical or visually similar images, and enabling it need not bring the result closer to Forge. Forge compatibility remains a separate master switch. Older workflows without this field load with adjustments ON to preserve existing behavior.
 
 Shared processing that is already compatible needs no additional correction and does not require Sampling adjustments to be ON. Corrections address differences that affect reproducibility. A shared sampler formula alone does not imply identical intermediate noise or schedules, so the sampler name does not guarantee unchanged results when toggling this option.
 

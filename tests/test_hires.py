@@ -89,7 +89,7 @@ def test_anima_hires_image_size_shift_and_two_passes():
     assert len(samplers) == len(settings) == 2
     assert [(n['values']['steps'], n['values']['cfg'], n['values']['denoise']) for n in samplers] == [(30,7,1),(20,4,.5)]
     assert [n['values']['shift'] for n in settings] == ['3.0','5.0']
-    assert all(n['values']['sampling_adjustments'] is False for n in settings)
+    assert all(n['values']['sampling_adjustments'] is True for n in settings)
     up = next(n for n in plan['nodes'] if n['type']=='ImageScale')
     assert (up['values']['width'],up['values']['height']) == (1536,2048)
     assert sum(n['type']=='VAEEncode' for n in plan['nodes']) == 1
