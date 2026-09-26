@@ -166,9 +166,9 @@ Wan動画は対象外です。Lumina2／PiDは対応レシピがなく、誤っ�
 
 ### ワークフローを整列する
 
-[![日本語版：Arrange workflowの説明動画](docs/media/arrange-ja.png)](docs/media/arrange-ja.mp4)
+https://github.com/user-attachments/assets/3c00dd37-9812-4df2-94a2-17e30958be5f
 
-**画像をクリックして日本語動画を開く** · [MP4](docs/media/arrange-ja.mp4) · [字幕SRT](docs/media/arrange-ja.srt)
+**日本語版：再生ボタンでこのページ内から視聴できます。** ナレーションとBGMを聴くには、プレーヤーのミュートを解除してください。 [MP4](docs/media/arrange-ja.mp4) · [字幕SRT](docs/media/arrange-ja.srt)
 
 キャンバスまたは対象ノードを右クリックして、**ForgeNeo Bridge → 配置を整える / Arrange workflow**を選びます。モデル・サイズ、プロンプト、基本生成、Hires、出力をグループ化し、Settingsを対応するSamplerの下へ配置します。常時ONのスイッチではなく、必要なときに一度実行する操作です。
 
@@ -355,9 +355,9 @@ Explicit Hires resize takes precedence. For image imports with only an upscale m
 
 ### Arrange the workflow
 
-[![English: Arrange workflow demonstration](docs/media/arrange-en.png)](docs/media/arrange-en.mp4)
+https://github.com/user-attachments/assets/2fbaaa7e-5dca-4e98-afa5-69eb2955fb39
 
-**Click the image to open the English video** · [MP4](docs/media/arrange-en.mp4) · [SRT captions](docs/media/arrange-en.srt)
+**English: press Play to watch directly on this page.** Unmute the player to hear the narration and background music. [MP4](docs/media/arrange-en.mp4) · [SRT captions](docs/media/arrange-en.srt)
 
 Right-click the canvas or a target node and choose **ForgeNeo Bridge → Arrange workflow**. It groups model/size, prompts, base generation, Hires and output, placing Settings below its sampler. This is a one-time action, not a persistent ON/OFF switch.
 
