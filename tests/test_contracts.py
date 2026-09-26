@@ -27,7 +27,7 @@ def graph():
 def test_binding_actual_edge_and_file(assets,document):
     b=verify_binding(document['effective'],GraphReader(graph()),'2','model','model')
     assert b['assets'][0]['size']==7 and len(b['hash'])==64
-    (assets['diffusion_models']/'test.safetensors').write_bytes(b'changed')
+    (assets['diffusion_models']/'test.safetensors').write_bytes(b'changed!')
     assert verify_binding(document['effective'],GraphReader(graph()),'2','model','model')['hash']!=b['hash']
 
 def test_binding_not_manifest_flag(assets,document):
