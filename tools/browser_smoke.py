@@ -25,8 +25,9 @@ class Graph {
 const defs={
  UNETLoader:[['unet_name','weight_dtype'],[]],CLIPLoader:[['clip_name','type','device'],[]],VAELoader:[['vae_name'],[]],
  ForgeNeoBridgeTextEncode:[['text'],['clip']],
- ForgeNeoBridgeSettings:[['family','mode','width','height','batch_size','rng','ensd','subseed','subseed_strength','emphasis','clip_skip','comma_padding_backtrack','seed_resize_width','seed_resize_height','shift','eta_ancestral','eta_ddim','s_churn','s_tmin','s_tmax','s_noise','sigma_min','sigma_max','rho','beta_alpha','beta_beta','discard_penultimate','sgm_noise_multiplier','skip_early_cfg','ngms','ngms_all_steps','img2img_step_mode','img2img_extra_noise','original_width','original_height','target_width','target_height','crop_x','crop_y','zero_empty_negative','source_json'],[]],
+ ForgeNeoBridgeSettings:[['family','mode','width','height','batch_size','rng','ensd','subseed','subseed_strength','emphasis','clip_skip','comma_padding_backtrack','seed_resize_width','seed_resize_height','shift','eta_ancestral','eta_ddim','s_churn','s_tmin','s_tmax','s_noise','sigma_min','sigma_max','rho','beta_alpha','beta_beta','discard_penultimate','sgm_noise_multiplier','skip_early_cfg','ngms','ngms_all_steps','img2img_step_mode','img2img_extra_noise','original_width','original_height','target_width','target_height','crop_x','crop_y','zero_empty_negative','source_json','sampling_adjustments'],[]],
  ForgeNeoBridgeKSampler:[['seed','steps','cfg','sampler_name','scheduler','denoise'],['model','positive','negative','settings','input_latent']],
+ EmptyLatentImage:[['width','height','batch_size'],[]],
  VAEDecode:[[],['samples','vae']],SaveImage:[['filename_prefix'],['images']],
  CheckpointLoaderSimple:[['ckpt_name'],[]],LoraLoader:[['lora_name','strength_model','strength_clip'],['model','clip']],
  LoadImage:[['image'],[]],VAEEncode:[[],['pixels','vae']]
@@ -63,24 +64,39 @@ def main():
         sys.modules['folder_paths']=SimpleNamespace(get_folder_paths=lambda cat:[str(root/cat)],get_full_path=lambda cat,name:str(root/cat/name))
         with sync_playwright() as pw:
             browser=pw.chromium.launch(headless=True,executable_path=os.environ.get('CHROMIUM') or None,args=['--no-sandbox'])
-            page=browser.new_page(viewport={'width':1280,'height':960});errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
-            # Pure DOM harness: no network or local HTTP server is required.
+            page=browser.new_page(viewport={'width':1280,'height':960});errors=[]
+            page.on('pageerror',lambda e:errors.append(str(e)))
+            page.on('console',lambda message:errors.append(message.text) if message.type == 'error' else None)
+            page.on('dialog',lambda dialog:(errors.append(dialog.message),dialog.dismiss()))
+            # Route localhost to a synthetic page so browser crypto matches Comfy's secure localhost origin.
+            # No network request or local HTTP server is required.
+            page.route('http://localhost/bridge-smoke',lambda route:route.fulfill(
+                body='<!doctype html><title>Bridge browser harness</title>',content_type='text/html'))
+            page.goto('http://localhost/bridge-smoke')
             page.expose_function('bridgeRequest',dispatch)
-            page.set_content('<!doctype html><title>Bridge browser harness</title>')
-            page.evaluate("""async ([stub,core,bridge,accordion,seeds])=>{
+            page.evaluate("""async ([stub,core,bridge,accordion,seeds,layout,help,i18n])=>{
                 const js=text=>URL.createObjectURL(new Blob([text],{type:'text/javascript'}));
                 const appUrl=js(stub);
                 const apiUrl=js(`export const api={fetchApi:async(path,opt={})=>{const data=await bridgeRequest(path,opt.body);return new Response(JSON.stringify(data),{status:data.error?400:200,headers:{'Content-Type':'application/json'}})}};`);
-                const coreUrl=js(core);
-                const accordionUrl=js(accordion);
-                bridge=bridge.replace('../../scripts/app.js',appUrl).replace('../../scripts/api.js',apiUrl).replace('./bridge_core.js',coreUrl).replace('./settings_accordion.js',accordionUrl).replace('./seed_controls.js',js(seeds));
+                const i18nUrl=js(i18n);
+                const layoutUrl=js(layout.replace('./i18n.js',i18nUrl));
+                const helpUrl=js(help.replace('./i18n.js',i18nUrl));
+                const coreUrl=js(core.replace('./layout.js',layoutUrl));
+                const accordionUrl=js(accordion.replace('./i18n.js',i18nUrl));
+                bridge=bridge.replace('../../scripts/app.js',appUrl).replace('../../scripts/api.js',apiUrl)
+                    .replace('./layout.js',layoutUrl).replace('./bridge_core.js',coreUrl)
+                    .replace('./settings_accordion.js',accordionUrl).replace('./help.js',helpUrl)
+                    .replace('./seed_controls.js',js(seeds)).replace('./i18n.js',i18nUrl);
                 await import(js(bridge));
-            }""",[STUB,(ROOT/'web/bridge_core.js').read_text(),(ROOT/'web/bridge.js').read_text(),(ROOT/'web/settings_accordion.js').read_text(),(ROOT/'web/seed_controls.js').read_text()])
+            }""",[STUB,(ROOT/'web/bridge_core.js').read_text(),(ROOT/'web/bridge.js').read_text(),
+                  (ROOT/'web/settings_accordion.js').read_text(),(ROOT/'web/seed_controls.js').read_text(),
+                  (ROOT/'web/layout.js').read_text(),(ROOT/'web/help.js').read_text(),(ROOT/'web/i18n.js').read_text()])
             page.wait_for_function('host?.extension != null')
             assert page.evaluate('host.handleFile === host.handleFile')
             page.evaluate("host.extension.settings[0].onChange(true)")
             page.evaluate("async () => await host.handleFile(new File(['x'],'forge.png'))")
-            page.wait_for_function('host.loads.length === 1')
+            try:page.wait_for_function('host.loads.length === 1',timeout=10000)
+            except Exception as exc:raise AssertionError(f'Image drop did not load a graph: {errors}') from exc
             assert page.locator('dialog').count()==0
             seed=page.evaluate("host.loads[0].nodes.find(n=>n.type==='ForgeNeoBridgeKSampler').widgets_values[0]")
             assert seed=='9007199254740993'
