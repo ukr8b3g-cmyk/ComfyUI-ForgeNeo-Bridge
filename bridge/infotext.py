@@ -79,7 +79,7 @@ def parse_loras(text):
     return clean,entries
 
 
-def import_infotext(text, family='anima', policy='strict'):
+def import_infotext(text, family='anima', policy='strict', tolerant=False):
     if len(text.encode('utf-8'))>16*1024*1024:raise BridgeError('IMPORT_LIMIT_EXCEEDED','Infotext too large')
     p=text.rfind('\nSteps:')
     if p<0:raise BridgeError('NOT_FORGE_METADATA','Missing generation parameters')
@@ -122,11 +122,19 @@ def import_infotext(text, family='anima', policy='strict'):
                     if name.endswith(suffix):
                         name=name[:-len(suffix)];set_value('/sampling/scheduler',suffix.strip().lower(),f['key'])
                 known={k.casefold():v for k,v in SAMPLER_NAMES.items()}
-                if name.casefold() not in known:raise BridgeError('UNSUPPORTED_COMBINATION',f'Unknown sampler {name}')
+                if name.casefold() not in known:
+                    if not tolerant:raise BridgeError('UNSUPPORTED_COMBINATION',f'Unknown sampler {name}')
+                    doc['unsupported'].append(issue('UNSUPPORTED_COMBINATION','/sampling/sampler',f'Unknown sampler {name}'))
+                    doc['extensions']['unhandled_sampler']=value
+                    continue
                 set_value('/sampling/sampler',known[name.casefold()],f['key'])
             elif key=='schedule type':
                 known={k.casefold():v for k,v in SCHEDULER_NAMES.items()}
-                if value.casefold() not in known:raise BridgeError('UNSUPPORTED_COMBINATION',f'Unknown scheduler {value}')
+                if value.casefold() not in known:
+                    if not tolerant:raise BridgeError('UNSUPPORTED_COMBINATION',f'Unknown scheduler {value}')
+                    doc['unsupported'].append(issue('UNSUPPORTED_COMBINATION','/sampling/scheduler',f'Unknown scheduler {value}'))
+                    doc['extensions']['unhandled_scheduler']=value
+                    continue
                 set_value('/sampling/scheduler',known[value.casefold()],f['key'])
             elif key=='version':
                 doc['source']['exporter_version']=value
@@ -145,7 +153,11 @@ def import_infotext(text, family='anima', policy='strict'):
             if isinstance(exc,BridgeError):raise
             raise BridgeError('INVALID_METADATA',f'Invalid value for {f["key"]}') from exc
     if any(f['key'].casefold()=='denoising strength' for f in fields) and cfg['mode']=='txt2img':cfg['mode']='img2img'
-    _,loras=parse_loras(positive)
+    try:_,loras=parse_loras(positive)
+    except BridgeError as exc:
+        if not tolerant or exc.code!='UNSUPPORTED_COMBINATION':raise
+        doc['unsupported'].append(issue(exc.code,'/text/positive_raw',str(exc)))
+        loras=[]
     doc['extensions']['raw_assets']=raw_assets
     doc['extensions']['raw_loras']=loras
     if re.search(r'\bembedding:',positive+' '+negative):doc['unsupported'].append(issue('UNSUPPORTED_COMBINATION','/text','Textual Inversion is outside V1'))

@@ -1,0 +1,331 @@
+{
+  "ForgeCompatSpec": {
+    "description": "Create a legacy Forge configuration Spec.",
+    "inputs": {
+      "source_mode": {
+        "tooltip": "Legacy Spec input mode: manual/spec_json reads JSON, image reads metadata, and infotext reads generation text."
+      },
+      "profile": {
+        "tooltip": "Execution profile supported by this Bridge."
+      },
+      "policy": {
+        "tooltip": "Strict enforces the profile; exploratory helps inspect supported cases. Neither enables unimplemented features."
+      },
+      "payload": {
+        "tooltip": "Spec JSON or generation-information text to import."
+      },
+      "overrides_json": {
+        "tooltip": "Explicit Spec overrides as JSON. Normally an empty object."
+      },
+      "image_file": {
+        "tooltip": "Relative image filename in the ComfyUI input folder."
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "Forge configuration Spec shared by nodes in the same run."
+      },
+      "1": {
+        "tooltip": "Applied settings, warnings and validation information."
+      }
+    }
+  },
+  "ForgeCompatText": {
+    "description": "Create Forge text conditioning from a legacy Spec.",
+    "inputs": {
+      "spec": {
+        "tooltip": "Forge configuration Spec shared by nodes in the same run."
+      },
+      "clip": {
+        "tooltip": "Connect the text encoder from a loader or LoRA node."
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "Connect Forge conditioning generated from the same Spec."
+      },
+      "1": {
+        "tooltip": "Applied settings, warnings and validation information."
+      }
+    }
+  },
+  "ForgeCompatNoise": {
+    "description": "Create initial noise and replayable RNG state from a legacy Spec.",
+    "inputs": {
+      "spec": {
+        "tooltip": "Forge configuration Spec shared by nodes in the same run."
+      },
+      "model": {
+        "tooltip": "Connect the generation model from a loader or LoRA node."
+      },
+      "input_latent": {
+        "tooltip": "Connect latent data from Empty Latent Image or VAE Encode. This input supplies dimensions and batch size."
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "Generated or prepared latent for VAE Decode and other latent nodes."
+      },
+      "1": {
+        "tooltip": "Initial noise and RNG state generated from the same Spec and model."
+      },
+      "2": {
+        "tooltip": "Applied settings, warnings and validation information."
+      }
+    }
+  },
+  "ForgeCompatSampler": {
+    "description": "Sample with a legacy Spec, conditioning and noise. New editable workflows use Bridge KSampler.",
+    "inputs": {
+      "spec": {
+        "tooltip": "Forge configuration Spec shared by nodes in the same run."
+      },
+      "model": {
+        "tooltip": "Connect the generation model from a loader or LoRA node."
+      },
+      "conditioning": {
+        "tooltip": "Connect Forge conditioning generated from the same Spec."
+      },
+      "noise": {
+        "tooltip": "Initial noise and RNG state generated from the same Spec and model."
+      },
+      "latent_image": {
+        "tooltip": "Connect the latent produced by the same Noise node."
+      },
+      "trace_level": {
+        "tooltip": "None disables traces, summary records numeric facts, and tensors also saves diagnostic tensors, using additional disk space."
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "Generated or prepared latent for VAE Decode and other latent nodes."
+      },
+      "1": {
+        "tooltip": "Sequence of noise levels used for sampling."
+      },
+      "2": {
+        "tooltip": "Applied settings, warnings and validation information."
+      }
+    }
+  },
+  "ForgeNeoBridgeTextEncode": {
+    "description": "Editable prompt. Settings selects the encoding path.",
+    "inputs": {
+      "clip": {
+        "tooltip": "Connect the text encoder from a loader or LoRA node."
+      },
+      "text": {
+        "tooltip": "Editable prompt, encoded inside Bridge KSampler according to Settings."
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "Prompt and connected encoder."
+      }
+    }
+  },
+  "ForgeNeoBridgeSettings": {
+    "description": "Compatibility and additional settings. Hover over each field for help.",
+    "inputs": {
+      "family": {
+        "tooltip": "Model family. Auto detects the connected model. The Forge compatibility path supports SD1.5, SDXL and Anima."
+      },
+      "mode": {
+        "tooltip": "Txt2img creates a new image; img2img uses an input latent. The second Hires pass uses img2img."
+      },
+      "width": {
+        "tooltip": "Fallback image width when no latent is connected. A connected latent supplies its own dimensions."
+      },
+      "height": {
+        "tooltip": "Fallback image height when no latent is connected. A connected latent supplies its own dimensions."
+      },
+      "batch_size": {
+        "tooltip": "Fallback image count when no latent is connected. A connected latent supplies its batch size."
+      },
+      "emphasis": {
+        "tooltip": "Forge prompt emphasis: Original applies normalization, No norm omits it, Ignore ignores weights, and None disables emphasis parsing. Requires Forge compatibility ON."
+      },
+      "clip_skip": {
+        "tooltip": "Auto uses the model default; an integer selects a CLIP layer counted from the end. Model dependent; not applied to the Forge Anima path. Retained when sampling adjustments are OFF."
+      },
+      "comma_padding_backtrack": {
+        "tooltip": "Maximum token backtrack to a comma at a long-prompt chunk boundary. Zero disables it. Requires Forge compatibility ON."
+      },
+      "rng": {
+        "tooltip": "Initial-noise RNG: CPU, GPU (CUDA), or NV. The same seed can produce different noise across these modes. Requires Forge compatibility ON."
+      },
+      "ensd": {
+        "tooltip": "Seed delta for intermediate noise. Zero means no offset. Applied only by supported samplers with Forge compatibility and Sampling adjustments ON. The value is retained when OFF."
+      },
+      "subseed": {
+        "tooltip": "Secondary seed for variations. Has no effect when variation strength is zero. Requires Forge compatibility ON."
+      },
+      "subseed_strength": {
+        "tooltip": "Noise blend between the main seed and subseed: zero uses the main seed, one uses the subseed. Requires Forge compatibility ON."
+      },
+      "seed_resize_width": {
+        "tooltip": "Reference width for seed resizing. Used when both reference dimensions are positive. Requires Forge compatibility ON."
+      },
+      "seed_resize_height": {
+        "tooltip": "Reference height for seed resizing. Used when both reference dimensions are positive. Requires Forge compatibility ON."
+      },
+      "eta_ancestral": {
+        "tooltip": "Additional-noise amount for stochastic samplers accepting Eta. Requires Sampling adjustments ON and a supporting sampler."
+      },
+      "eta_ddim": {
+        "tooltip": "Preserves imported Forge DDIM Eta. It is not applied by the current Comfy DDIM path."
+      },
+      "s_churn": {
+        "tooltip": "Intermediate noise churn for supporting samplers. Zero disables it. Requires Sampling adjustments ON."
+      },
+      "s_tmin": {
+        "tooltip": "Minimum sigma for churn. Requires Sampling adjustments ON."
+      },
+      "s_tmax": {
+        "tooltip": "Maximum sigma for churn; zero means no upper limit. Requires Sampling adjustments ON."
+      },
+      "s_noise": {
+        "tooltip": "Intermediate-noise multiplier for supporting samplers. Requires Sampling adjustments ON."
+      },
+      "sigma_min": {
+        "tooltip": "Minimum sigma; auto uses the model value. Requires Sampling adjustments ON and a supporting scheduler."
+      },
+      "sigma_max": {
+        "tooltip": "Maximum sigma; auto uses the model value. Requires Sampling adjustments ON and a supporting scheduler."
+      },
+      "rho": {
+        "tooltip": "Curve parameter for Karras and other supporting schedulers. Auto uses the default. Requires Sampling adjustments ON."
+      },
+      "beta_alpha": {
+        "tooltip": "Alpha shape parameter of the Beta schedule. Requires Sampling adjustments ON."
+      },
+      "beta_beta": {
+        "tooltip": "Beta shape parameter of the Beta schedule. Requires Sampling adjustments ON."
+      },
+      "discard_penultimate": {
+        "tooltip": "Remove the penultimate sigma. Some samplers also require this independently. This override requires Sampling adjustments ON."
+      },
+      "sgm_noise_multiplier": {
+        "tooltip": "Use the SGM initial-noise multiplier for txt2img. Not applied to Anima. Requires Sampling adjustments ON."
+      },
+      "shift": {
+        "tooltip": "Noise-timestep shift for Anima. Auto retains the imported setting. Requires Sampling adjustments ON; not applied to other families."
+      },
+      "skip_early_cfg": {
+        "tooltip": "Fraction of early denoising calls that skip CFG. Zero disables it. Requires Sampling adjustments ON."
+      },
+      "ngms": {
+        "tooltip": "Sigma threshold below which negative conditioning may be skipped. Zero disables it. Requires Sampling adjustments ON."
+      },
+      "ngms_all_steps": {
+        "tooltip": "Evaluate NGMS on every denoiser call instead of alternating calls. Requires Sampling adjustments ON."
+      },
+      "img2img_step_mode": {
+        "tooltip": "Forge_scaled shortens the run according to denoise; exact_steps executes the requested count. With adjustments OFF, core ComfyUI step calculation is used."
+      },
+      "img2img_extra_noise": {
+        "tooltip": "Additional starting noise for img2img. Zero disables it. Requires Sampling adjustments ON."
+      },
+      "original_width": {
+        "tooltip": "SDXL original-width conditioning. Zero uses the current latent width. Requires Forge compatibility ON."
+      },
+      "original_height": {
+        "tooltip": "SDXL original-height conditioning. Zero uses the current latent height. Requires Forge compatibility ON."
+      },
+      "target_width": {
+        "tooltip": "SDXL target-width conditioning. Zero uses the current latent width. Does not resize the image. Requires Forge compatibility ON."
+      },
+      "target_height": {
+        "tooltip": "SDXL target-height conditioning. Zero uses the current latent height. Does not resize the image. Requires Forge compatibility ON."
+      },
+      "crop_x": {
+        "tooltip": "Horizontal crop conditioning for SDXL. Does not crop the actual image. Requires Forge compatibility ON."
+      },
+      "crop_y": {
+        "tooltip": "Vertical crop conditioning for SDXL. Does not crop the actual image. Requires Forge compatibility ON."
+      },
+      "zero_empty_negative": {
+        "tooltip": "Zero empty SDXL negative conditioning. Requires Forge compatibility ON."
+      },
+      "source_json": {
+        "tooltip": "Imported source settings for inspection. Normally no editing is needed. Generation uses the current node values."
+      },
+      "forge_compatibility": {
+        "tooltip": "ON uses Forge text processing and initial noise; the next switch controls sampling adjustments. OFF uses core ComfyUI text encoding and KSampler. Bridge must remain installed in both modes."
+      },
+      "sampling_adjustments": {
+        "tooltip": "Default OFF. With Forge compatibility ON, OFF uses ComfyUI samplers and schedules; ON applies Forge sampling adjustments. Neither identical nor visually similar images are guaranteed. Older workflows load with this ON to preserve their behavior."
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "Settings consumed by Bridge KSampler."
+      }
+    }
+  },
+  "ForgeNeoBridgeKSampler": {
+    "description": "Generate using current node values. Settings controls Forge compatibility and sampling adjustments.",
+    "inputs": {
+      "model": {
+        "tooltip": "Connect the generation model from a loader or LoRA node."
+      },
+      "positive": {
+        "tooltip": "Connect positive input from Bridge Text Encode."
+      },
+      "negative": {
+        "tooltip": "Connect negative input from Bridge Text Encode."
+      },
+      "settings": {
+        "tooltip": "Connect Bridge Settings to choose compatibility processing and additional options."
+      },
+      "seed": {
+        "tooltip": "Random seed. Edit with arrows or numeric entry. Choose how it changes between runs using control after generate."
+      },
+      "steps": {
+        "tooltip": "Sampling step count. Executed img2img steps also depend on denoise and the adjustment setting."
+      },
+      "cfg": {
+        "tooltip": "Classifier-free guidance strength. Higher values do not always give better results."
+      },
+      "sampler_name": {
+        "tooltip": "Method used at each sampling step. The same name may differ between Forge and ComfyUI; Sampling adjustments selects the execution path."
+      },
+      "scheduler": {
+        "tooltip": "Noise schedule. With adjustments OFF, Automatic and Uniform use Comfy Normal, and DDIM uses ddim_uniform. Forge-only schedules require adjustments ON."
+      },
+      "denoise": {
+        "tooltip": "How strongly to change the input latent. One is full denoising; zero leaves it unchanged with adjustments OFF. Forge step counts also depend on the step mode."
+      },
+      "input_latent": {
+        "tooltip": "Connect latent data from Empty Latent Image or VAE Encode. This input supplies dimensions and batch size."
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "Generated or prepared latent for VAE Decode and other latent nodes."
+      }
+    }
+  },
+  "ForgeNeoBridgeScheduler": {
+    "description": "Build core ComfyUI sigmas with penultimate-sigma removal. This dedicated node is independent of the Settings switches.",
+    "inputs": {
+      "model": {
+        "tooltip": "Connect the generation model from a loader or LoRA node."
+      },
+      "scheduler": {
+        "tooltip": "Choose a core ComfyUI scheduler."
+      },
+      "steps": {
+        "tooltip": "Requested number of sampling intervals, after removing the penultimate sigma."
+      },
+      "denoise": {
+        "tooltip": "Fraction of the full noise schedule to use. Zero returns an empty sigma sequence."
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "Sequence of noise levels used for sampling."
+      }
+    }
+  }
+}

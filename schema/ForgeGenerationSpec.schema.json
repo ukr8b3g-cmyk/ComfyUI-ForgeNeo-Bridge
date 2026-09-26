@@ -5,6 +5,9 @@
   "description": "Final design contract. Not an implementation or a claim of completed GPU parity tests.",
   "type": "object",
   "properties": {
+    "execution_scope": {
+      "enum": ["generation", "sampling"]
+    },
     "schema_version": {
       "const": "1.0.0"
     },
@@ -515,6 +518,7 @@
             "sampling": {
               "type": "object",
               "properties": {
+                "adjustments": {"type": "boolean"},
                 "sampler": {
                   "enum": [
                     "dpmpp_2m",
@@ -1631,6 +1635,7 @@
               "sampling": {
                 "type": "object",
                 "properties": {
+                  "adjustments": {"type": "boolean"},
                   "sampler": {
                     "enum": [
                       "dpmpp_2m",

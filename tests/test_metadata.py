@@ -3,6 +3,16 @@ from fnb.bridge.metadata import read_metadata,_tiff,Collector
 from fnb.bridge.infotext import import_infotext,parse_loras,split_fields
 from fnb.bridge.spec import BridgeError
 
+
+@pytest.mark.parametrize('kind', ['PNG','JPEG','WEBP'])
+def test_output_dimensions_are_read_from_image_container(kind):
+    from io import BytesIO
+    from PIL import Image
+    from fnb.bridge.metadata import image_dimensions
+    output = BytesIO()
+    Image.new('RGB',(1536,2048)).save(output,format=kind)
+    assert image_dimensions(output.getvalue()) == (1536,2048)
+
 TEXT='a teapot\nNegative prompt: blurry\nSteps: 10, Sampler: ER SDE, Schedule type: Beta, CFG scale: 1.5, Seed: 9007199254740993, Size: 1024x1344, RNG: CPU, ENSD: 0, Eta: 0, Sigma noise: 0, Beta schedule alpha: 0.6, Beta scheduler beta: 0.6, SGM noise multiplier: False, Version: neo-2.29.1'
 def chunk(kind,data):return struct.pack('>I',len(data))+kind+data+struct.pack('>I',zlib.crc32(kind+data)&0xffffffff)
 def png(values):return b'\x89PNG\r\n\x1a\n'+b''.join(chunk(b'tEXt',k.encode()+b'\0'+v.encode()) for k,v in values)+chunk(b'IEND',b'')

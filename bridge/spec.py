@@ -17,8 +17,10 @@ MAX_SEED = 2**64 - 1
 
 def _finite(value):
     return type(value) is int or (type(value) is float and math.isfinite(value))
-# Inventory is not a claim of GPU qualification. Only these audited paths execute in V1.
-SAMPLERS = ("euler", "euler_ancestral", "er_sde", "dpmpp_2m", "dpmpp_2m_sde", "dpm_2", "heun")
+# Core-backed selections are usable without claiming Forge numerical parity.
+COMFY_SHARED_SAMPLERS = ('ddim', 'unipc', 'euler_cfg_pp', 'euler_ancestral_cfg_pp', 'dpmpp_2m_cfg_pp')
+SAMPLERS = ("euler", "euler_ancestral", "er_sde", "dpmpp_2m", "dpmpp_2m_sde", "dpm_2", "heun",
+            "lcm", "lms", "dpmpp_sde", "dpmpp_3m_sde", "res_multistep") + COMFY_SHARED_SAMPLERS
 SCHEDULERS = ("automatic", "simple", "beta", "karras", "exponential", "polyexponential", "normal", "uniform", "sgm_uniform", "linear_quadratic", "kl_optimal", "ddim", "align_your_steps", "turbo", "bong_tangent", "flow_match")
 
 
@@ -223,7 +225,8 @@ def finalize(document: dict, overrides: dict | None = None) -> 'GenerationSpec':
     generated_paths = {'/mode', '/prediction_type', '/sampling', '/noise/seed_resize_from', '/sampling/denoise'}
     unsupported = [x for x in doc['unsupported'] if not (x['code'] == 'UNSUPPORTED_COMBINATION' and x['path'] in generated_paths)]
     roles = {a['role'] for a in cfg['assets']}
-    if not {'model', 'text_encoder', 'vae'} <= roles:
+    required_roles = {'model', 'text_encoder'} if doc.get('execution_scope') == 'sampling' else {'model', 'text_encoder', 'vae'}
+    if not required_roles <= roles:
         unresolved.append(issue('ASSET_BINDING_REQUIRED', '/assets', 'Bind model, text encoder and VAE through known loaders.'))
     for a in cfg['assets']:
         if a['resolution'] not in ('connected', 'resolved') or a['binding_verification'] == 'unverified':
@@ -241,14 +244,16 @@ def finalize(document: dict, overrides: dict | None = None) -> 'GenerationSpec':
         unsupported.append(issue('UNSUPPORTED_COMBINATION', '/sampling', 'Non-default predictor/FlowMatch options are not qualified.'))
     if cfg['family'] == 'anima' and any(n['seed_resize_from'].values()):
         unsupported.append(issue('UNSUPPORTED_COMBINATION', '/noise/seed_resize_from', 'Anima seed resize is outside V1.'))
-    if cfg['mode'] == 'img2img' and s['img2img_step_mode'] == 'exact_steps' and s['denoise'] == 0:
+    if s.get('adjustments',True) and cfg['mode'] == 'img2img' and s['img2img_step_mode'] == 'exact_steps' and s['denoise'] == 0:
         unsupported.append(issue('UNSUPPORTED_COMBINATION', '/sampling/denoise', 'Exact-steps/zero denoise has no valid reference schedule.'))
     if s['sigma_min'] is not None and s['sigma_max'] is not None and s['sigma_min'] >= s['sigma_max']:
         raise BridgeError('INVALID_SPEC', 'sigma_min must be less than sigma_max')
     for flag, dst in [('unresolved', unresolved), ('unsupported', unsupported)]:
         doc[flag] = list({canonical(x): x for x in dst}.values())
     doc['status'] = 'unsupported' if doc['unsupported'] else 'needs_review' if doc['unresolved'] else 'ready'
-    doc['config_hash'] = hashlib.sha256(canonical({'profile': doc['profile'], 'effective': cfg}).encode('utf-8')).hexdigest()
+    hash_input = {'profile': doc['profile'], 'effective': cfg}
+    if doc.get('execution_scope') == 'sampling':hash_input['execution_scope'] = 'sampling'
+    doc['config_hash'] = hashlib.sha256(canonical(hash_input).encode('utf-8')).hexdigest()
     _check(doc, schema())
     return GenerationSpec(canonical(doc))
 

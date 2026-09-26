@@ -4,10 +4,11 @@ import asyncio
 import copy
 import hashlib
 from .spec import BridgeError, PROFILE, SAMPLERS, SCHEDULERS, canonical, default_document, finalize, parse_json, schema
-from .metadata import MAX_IMAGE, read_metadata
+from .metadata import MAX_IMAGE, read_metadata, image_dimensions
 from .infotext import import_infotext
 from .binding import category_path, file_identity
 from .workflow import graph_plan
+from .reconstruction import reconstruct, reconstruction_plan
 
 
 def catalog():
@@ -35,6 +36,13 @@ def review_document(doc, acknowledge=False):
 
 def register_routes(routes):
     from aiohttp import web
+    async def image_bytes(request):
+        if request.content_length and request.content_length>MAX_IMAGE:raise BridgeError('IMPORT_LIMIT_EXCEEDED','Image exceeds 128 MiB')
+        data=bytearray()
+        async for chunk in request.content.iter_chunked(1024*1024):
+            data.extend(chunk)
+            if len(data)>MAX_IMAGE:raise BridgeError('IMPORT_LIMIT_EXCEEDED','Image exceeds 128 MiB')
+        return bytes(data)
     def guarded(fn):
         async def wrapper(request):
             try:return web.json_response(await fn(request),dumps=canonical)
@@ -53,17 +61,30 @@ def register_routes(routes):
     @routes.post('/forge_neo_bridge/inspect')
     @guarded
     async def inspect_image(request):
-        if request.content_length and request.content_length>MAX_IMAGE:raise BridgeError('IMPORT_LIMIT_EXCEEDED','Image exceeds 128 MiB')
-        data=bytearray()
-        async for chunk in request.content.iter_chunked(1024*1024):
-            data.extend(chunk)
-            if len(data)>MAX_IMAGE:raise BridgeError('IMPORT_LIMIT_EXCEEDED','Image exceeds 128 MiB')
-        result=await asyncio.to_thread(read_metadata,bytes(data))
+        data=await image_bytes(request)
+        result=await asyncio.to_thread(read_metadata,data)
         if result['kind']!='forge':return {'kind':result['kind']}
         family=request.query.get('family','anima')
         spec=import_infotext(result['metadata']['parameters'],family=family)
         doc=spec.document();doc['source'].update(kind='image',filename=None,image_sha256=hashlib.sha256(data).hexdigest())
         return {'kind':'forge','spec':doc}
+    @routes.post('/forge_neo_bridge/reconstruct')
+    @guarded
+    async def reconstruct_image(request):
+        data=await image_bytes(request)
+        result=await asyncio.to_thread(read_metadata,data)
+        if result['kind']!='forge':return {'kind':result['kind']}
+        inventory=await asyncio.to_thread(catalog)
+        size=await asyncio.to_thread(image_dimensions,data)
+        doc,positive=await asyncio.to_thread(reconstruct,result['metadata']['parameters'],inventory,image_size=size)
+        doc['source'].update(kind='image',filename=None,image_sha256=hashlib.sha256(data).hexdigest())
+        plan=reconstruction_plan(doc,positive,inventory)
+        import nodes as core_nodes
+        from ..nodes import NODE_CLASS_MAPPINGS
+        available=set(core_nodes.NODE_CLASS_MAPPINGS)|set(NODE_CLASS_MAPPINGS)
+        missing={node['type'] for node in plan['nodes'] if node['type'] not in available}
+        if missing:raise BridgeError('NODE_MISSING','Missing registered classes: '+', '.join(sorted(missing)))
+        return {'kind':'forge','document':doc,'plan':plan}
     @routes.post('/forge_neo_bridge/infotext')
     @guarded
     async def inspect_text(request):

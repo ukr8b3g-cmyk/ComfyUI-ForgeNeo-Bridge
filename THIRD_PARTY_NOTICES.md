@@ -18,6 +18,10 @@ Changes: retain only the V1 sampler/planner subset; explicit per-run noise
 injection; no process-wide TorchHijack; require a private Brownian sampler;
 use Forge's actual scalar-sigma `to_d` override; package-local Lark import.
 The prompt grammar and timestep planning are retained from the reference.
+The sampler subset now also includes LCM, LMS, DPM++ SDE, DPM++ 3M SDE and
+Res Multistep. Res Multistep is specialized to its registered eta=0/CFG++-off
+entry; LCM and Res Multistep receive the private per-run RNG. LMS reuses the
+host's existing SciPy integration. The source SHA in the manifest is unchanged.
 
 `bridge/schedules.py`, `bridge/rng.py`, `bridge/classic.py`, and the relevant
 conditioning/CFG adapters in `bridge/text.py` and `bridge/runtime.py` contain

@@ -1,7 +1,7 @@
-"""Four public nodes. Heavy libraries and Comfy runtime code are imported only on execution."""
+"""Forge bridge nodes. Heavy libraries and Comfy runtime code are imported only on execution."""
 from __future__ import annotations
 import hashlib
-from .bridge.spec import PROFILE, BridgeError, GenerationSpec, canonical, default_document, finalize, parse_json, report
+from .bridge.spec import PROFILE, SAMPLERS, SCHEDULERS, BridgeError, GenerationSpec, canonical, default_document, finalize, parse_json, report
 
 CATEGORY = 'ForgeNeo Bridge'
 HIDDEN = {'prompt':'PROMPT','unique_id':'UNIQUE_ID','dynprompt':'DYNPROMPT'}
@@ -120,6 +120,124 @@ class ForgeCompatSampler:
         return result,sigmas,report('ForgeCompatSampler',spec,**facts)
 
 
-NODE_CLASS_MAPPINGS={c.__name__:c for c in (ForgeCompatSpec,ForgeCompatText,ForgeCompatNoise,ForgeCompatSampler)}
+class ForgeNeoBridgeTextEncode:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {'required':{'clip':('CLIP',),'text':('STRING',{'multiline':True,'default':''})},'hidden':HIDDEN.copy()}
+    RETURN_TYPES=('FORGE_TEXT_INPUT',);RETURN_NAMES=('text',)
+    FUNCTION='prepare';CATEGORY=CATEGORY
+    DESCRIPTION='Editable Forge prompt. Encoding occurs inside ForgeNeo Bridge KSampler after settings are known.'
+    def prepare(self,clip,text,prompt=None,unique_id=None,dynprompt=None):
+        from .bridge.workflow_adapter import ForgeTextInput
+        return (ForgeTextInput(text,clip,str(unique_id)),)
+
+
+class ForgeNeoBridgeSettings:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {'required':{
+            'family':(['auto','anima','sd15','sdxl'],), 'mode':(['txt2img','img2img'],),
+            'width':('INT',{'default':512,'min':64,'max':16384,'step':8}),
+            'height':('INT',{'default':512,'min':64,'max':16384,'step':8}),
+            'batch_size':('INT',{'default':1,'min':1,'max':64}),
+            'emphasis':(['Original','No norm','Ignore','None'],), 'clip_skip':('STRING',{'default':'auto'}),
+            'comma_padding_backtrack':('INT',{'default':20,'min':0,'max':256}),
+            'rng':(['CPU','GPU','NV'],), 'ensd':('STRING',{'default':'0'}),
+            'subseed':('STRING',{'default':'0'}),
+            'subseed_strength':('FLOAT',{'default':0.0,'min':0.0,'max':1.0,'step':0.01}),
+            'seed_resize_width':('INT',{'default':0,'min':0,'max':16384,'step':8}),
+            'seed_resize_height':('INT',{'default':0,'min':0,'max':16384,'step':8}),
+            'eta_ancestral':('FLOAT',{'default':1.0,'step':0.01}),
+            'eta_ddim':('FLOAT',{'default':0.0,'step':0.01}),
+            's_churn':('FLOAT',{'default':0.0,'step':0.01}),
+            's_tmin':('FLOAT',{'default':0.0,'step':0.01}),
+            's_tmax':('FLOAT',{'default':0.0,'step':0.01}),
+            's_noise':('FLOAT',{'default':1.0,'step':0.01}),
+            'sigma_min':('STRING',{'default':'auto'}),
+            'sigma_max':('STRING',{'default':'auto'}),
+            'rho':('STRING',{'default':'auto'}),
+            'beta_alpha':('FLOAT',{'default':0.6,'step':0.01}),
+            'beta_beta':('FLOAT',{'default':0.6,'step':0.01}),
+            'discard_penultimate':('BOOLEAN',{'default':False}),
+            'sgm_noise_multiplier':('BOOLEAN',{'default':False}),
+            'shift':('STRING',{'default':'auto'}),
+            'skip_early_cfg':('FLOAT',{'default':0.0,'step':0.01}),
+            'ngms':('FLOAT',{'default':0.0,'step':0.01}),
+            'ngms_all_steps':('BOOLEAN',{'default':False}),
+            'img2img_step_mode':(['forge_scaled','exact_steps'],),
+            'img2img_extra_noise':('FLOAT',{'default':0.0,'step':0.01}),
+            'original_width':('INT',{'default':0,'min':0,'max':16384}),
+            'original_height':('INT',{'default':0,'min':0,'max':16384}),
+            'target_width':('INT',{'default':0,'min':0,'max':16384}),
+            'target_height':('INT',{'default':0,'min':0,'max':16384}),
+            'crop_x':('INT',{'default':0,'min':0,'max':16384}),
+            'crop_y':('INT',{'default':0,'min':0,'max':16384}),
+            'zero_empty_negative':('BOOLEAN',{'default':False}),
+            'source_json':('STRING',{'multiline':True,'default':'{}'}),
+        },'optional':{'forge_compatibility':('BOOLEAN',{'default':True}),
+                       'sampling_adjustments':('BOOLEAN',{'default':False})}}
+    RETURN_TYPES=('FORGE_SETTINGS',);RETURN_NAMES=('settings',)
+    FUNCTION='prepare';CATEGORY=CATEGORY
+    DESCRIPTION='Editable Forge settings. Source JSON is provenance only; current widgets drive execution.'
+    def prepare(self,**values):
+        from .bridge.workflow_adapter import ForgeSettings
+        return (ForgeSettings(values),)
+
+
+class ForgeNeoBridgeKSampler:
+    @classmethod
+    def INPUT_TYPES(cls):
+        # Core is optional in offline tools; the running Comfy registry exposes
+        # its own complete sampler/scheduler choices without a duplicate list.
+        import sys
+        core = sys.modules.get('comfy.samplers')
+        samplers = list(dict.fromkeys([*SAMPLERS, *getattr(core,'SAMPLER_NAMES',())]))
+        schedulers = list(dict.fromkeys([*SCHEDULERS, *getattr(core,'SCHEDULER_NAMES',())]))
+        return {'required':{
+            'model':('MODEL',),'positive':('FORGE_TEXT_INPUT',),'negative':('FORGE_TEXT_INPUT',),
+            'settings':('FORGE_SETTINGS',),'seed':('STRING',{'default':'0'}),
+            'steps':('INT',{'default':20,'min':1,'max':10000}),
+            'cfg':('FLOAT',{'default':7.0,'min':0.0,'max':1000.0,'step':0.1}),
+            'sampler_name':(samplers,),'scheduler':(schedulers,),
+            'denoise':('FLOAT',{'default':1.0,'min':0.0,'max':1.0,'step':0.01}),
+        },'optional':{'input_latent':('LATENT',)},'hidden':HIDDEN.copy()}
+    RETURN_TYPES=('LATENT',);RETURN_NAMES=('latent',)
+    FUNCTION='sample';CATEGORY=CATEGORY;OUTPUT_NODE=False
+    DESCRIPTION='Uses current editable values. Settings chooses Forge compatibility or core Comfy text encoding and KSampler.'
+    def sample(self,model,positive,negative,settings,seed,steps,cfg,sampler_name,scheduler,denoise,
+               input_latent=None,prompt=None,unique_id=None,dynprompt=None):
+        from .bridge.workflow_adapter import sample_workflow
+        return sample_workflow(model,positive,negative,settings,
+                               {'seed':seed,'steps':steps,'cfg':cfg,'sampler_name':sampler_name,
+                                'scheduler':scheduler,'denoise':denoise},input_latent,prompt,unique_id,dynprompt)
+
+
+class ForgeNeoBridgeScheduler:
+    @classmethod
+    def INPUT_TYPES(cls):
+        import comfy.samplers
+        return {'required':{'model':('MODEL',), 'scheduler':(comfy.samplers.SCHEDULER_NAMES,),
+                'steps':('INT',{'default':20,'min':1,'max':10000}),
+                'denoise':('FLOAT',{'default':1.0,'min':0.0,'max':1.0,'step':0.01})}}
+    RETURN_TYPES=('SIGMAS',)
+    FUNCTION='schedule';CATEGORY=CATEGORY
+    DESCRIPTION='Comfy scheduler with Forge discard-penultimate behavior. Use with SamplerCustomAdvanced.'
+    def schedule(self,model,scheduler,steps,denoise):
+        import comfy.samplers
+        import torch
+        if denoise <= 0:return (torch.FloatTensor([]),)
+        total_steps = int(steps / denoise) if denoise < 1 else steps
+        sigmas = comfy.samplers.calculate_sigmas(model.get_model_object('model_sampling'), scheduler, total_steps + 1).cpu()
+        sigmas = torch.cat((sigmas[:-2],sigmas[-1:]))
+        return (sigmas[-(steps + 1):],)
+
+
+NODE_CLASS_MAPPINGS={c.__name__:c for c in (ForgeCompatSpec,ForgeCompatText,ForgeCompatNoise,ForgeCompatSampler,
+                                             ForgeNeoBridgeTextEncode,ForgeNeoBridgeSettings,ForgeNeoBridgeKSampler,
+                                             ForgeNeoBridgeScheduler)}
 NODE_DISPLAY_NAME_MAPPINGS={'ForgeCompatSpec':'Forge Compat Import / Spec','ForgeCompatText':'Forge Compat Text',
-                           'ForgeCompatNoise':'Forge Compat Noise','ForgeCompatSampler':'Forge Compat Sampler'}
+                           'ForgeCompatNoise':'Forge Compat Noise','ForgeCompatSampler':'Forge Compat Sampler',
+                           'ForgeNeoBridgeTextEncode':'ForgeNeo Bridge Text Encode',
+                           'ForgeNeoBridgeSettings':'ForgeNeo Bridge Settings',
+                           'ForgeNeoBridgeKSampler':'ForgeNeo Bridge KSampler',
+                           'ForgeNeoBridgeScheduler':'ForgeNeo Bridge Discard Penultimate Scheduler'}

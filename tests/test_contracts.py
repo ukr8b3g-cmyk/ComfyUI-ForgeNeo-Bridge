@@ -7,7 +7,7 @@ from types import SimpleNamespace as NS
 import pytest
 import torch
 from fnb.bridge.spec import BridgeError, finalize, default_document
-from fnb.bridge.binding import GraphReader, verify_binding, category_path, check_latent
+from fnb.bridge.binding import GraphReader, verify_binding, category_path, check_latent, validate_model
 from fnb.bridge.workflow import graph_plan
 from fnb.bridge.runtime import Denoiser, pick
 
@@ -53,11 +53,50 @@ def test_duplicate_lora_rejected(assets,document):
     g['4']=copy.deepcopy(g['3']);g['4']['inputs']['model']=['3',0];g['2']['inputs']['model']=['4',0]
     with pytest.raises(BridgeError,match='double application'):verify_binding(cfg,GraphReader(g),'2','model','model')
 
+
+def test_core_lora_metadata_attachment_is_not_a_model_patch(monkeypatch):
+    package=types.ModuleType('comfy');package.__path__=[]
+    base=types.ModuleType('comfy.model_base');sampling=types.ModuleType('comfy.model_sampling')
+    class Anima:pass
+    class CONST:pass
+    class EPS:pass
+    class V_PREDICTION:pass
+    base.Anima=Anima;base.SDXL=type('SDXL',(),{});base.BaseModel=type('BaseModel',(),{})
+    sampling.CONST=CONST;sampling.EPS=EPS;sampling.V_PREDICTION=V_PREDICTION
+    package.model_base=base;package.model_sampling=sampling
+    monkeypatch.setitem(sys.modules,'comfy',package)
+    monkeypatch.setitem(sys.modules,'comfy.model_base',base)
+    monkeypatch.setitem(sys.modules,'comfy.model_sampling',sampling)
+    cfg=default_document('anima')['effective']
+    cfg['loras']=[{'asset_id':'lora_0','strength_model':1.0,'strength_text_encoder':1.0,'order':0}]
+    model=NS(model=Anima(),get_model_object=lambda key:CONST(),object_patches={},
+             attachments={'lora_metadata':{'format':'pt'}},model_options={})
+    assert validate_model(model,cfg)=='anima'
+    cfg['loras']=[]
+    with pytest.raises(BridgeError,match='UNVERIFIED_PATCH_CHAIN'):validate_model(model,cfg)
+    cfg['loras']=[{'asset_id':'lora_0','strength_model':1.0,'strength_text_encoder':1.0,'order':0}]
+    model.attachments['custom_adapter']=object()
+    with pytest.raises(BridgeError,match='UNVERIFIED_PATCH_CHAIN'):validate_model(model,cfg)
+    del model.attachments['custom_adapter']
+    model.object_patches={'model_sampling':object()}
+    with pytest.raises(BridgeError,match='UNVERIFIED_PATCH_CHAIN'):validate_model(model,cfg)
+
 def test_file_symlink_escape(assets,tmp_path):
     outside=tmp_path/'private';outside.write_text('x')
     try:(assets['input']/'escape').symlink_to(outside)
     except OSError:pytest.skip('Symlink privilege not available')
     with pytest.raises(BridgeError,match='INVALID_PATH'):category_path('input','escape')
+
+def test_registered_model_symlink_uses_actual_target(assets,tmp_path):
+    outside=tmp_path/'shared.safetensors';outside.write_bytes(b'model')
+    try:(assets['checkpoints']/'linked.safetensors').symlink_to(outside)
+    except OSError:pytest.skip('Symlink privilege not available')
+    assert category_path('checkpoints','linked.safetensors')==outside.resolve()
+
+def test_model_resolver_cannot_return_unregistered_path(assets,tmp_path,monkeypatch):
+    outside=tmp_path/'private.safetensors';outside.write_bytes(b'model')
+    monkeypatch.setattr(sys.modules['folder_paths'],'get_full_path',lambda *_:str(outside))
+    with pytest.raises(BridgeError,match='INVALID_PATH'):category_path('checkpoints','linked.safetensors')
 
 @pytest.mark.parametrize('family',['anima','sd15','sdxl'])
 def test_graph_plan_no_hidden_lora(document,family):

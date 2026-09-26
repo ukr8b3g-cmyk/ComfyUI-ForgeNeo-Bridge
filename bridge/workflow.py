@@ -26,7 +26,7 @@ def graph_plan(spec):
     elif m['category']=='diffusion_models':model=(add('UNETLoader',{'unet_name':m['relative_name'],'weight_dtype':'default'}),0);checkpoint=None
     else:raise BridgeError('ASSET_MISSING','Model must use checkpoint/diffusion_models category')
     if len(te)==1 and checkpoint and te[0]['category']=='checkpoints' and te[0]['relative_name']==m['relative_name']:clip=(checkpoint,1)
-    elif len(te)==1 and te[0]['category']=='text_encoders':clip=(add('CLIPLoader',{'clip_name':te[0]['relative_name'],'type':'anima' if cfg['family']=='anima' else 'stable_diffusion','device':'default'}),0)
+    elif len(te)==1 and te[0]['category']=='text_encoders':clip=(add('CLIPLoader',{'clip_name':te[0]['relative_name'],'type':'stable_diffusion','device':'default'}),0)
     elif len(te)==2 and all(a['category']=='text_encoders' for a in te) and cfg['family']=='sdxl':
         # Explicit component order, not a Module number guess.
         ordered=sorted(te,key=lambda a:a['component'] or '')

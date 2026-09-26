@@ -1,0 +1,14 @@
+﻿1
+00:00:00,200 --> 00:00:05,533
+Turn a sprawling workflow
+into a clear, organized layout.
+
+2
+00:00:05,933 --> 00:00:15,133
+Right-click the canvas.
+ForgeNeo Bridge → Arrange workflow
+
+3
+00:00:15,533 --> 00:00:23,133
+Nodes are grouped by stage,
+making the workflow easier to follow and edit.

@@ -307,6 +307,13 @@ SAMPLER_OPTIONS = {
     'dpmpp_2m_sde': {'scheduler': 'exponential', 'brownian_noise': True},
     'dpm_2': {'scheduler': 'karras', 'discard_next_to_last_sigma': True, 'second_order': True},
     'heun': {'second_order': True},
+    'lcm': {}, 'lms': {}, 'res_multistep': {},
+    'dpmpp_sde': {'scheduler': 'karras', 'second_order': True, 'brownian_noise': True},
+    'dpmpp_3m_sde': {'scheduler': 'exponential', 'discard_next_to_last_sigma': True, 'brownian_noise': True},
+    # Core solver, Forge schedule. DDIM's timestep/Eta implementation is not ported.
+    'ddim': {}, 'unipc': {'discard_next_to_last_sigma': True},
+    'euler_cfg_pp': {}, 'euler_ancestral_cfg_pp': {'uses_ensd': True},
+    'dpmpp_2m_cfg_pp': {'scheduler': 'karras'},
 }
 
 class Predictor:
@@ -340,6 +347,11 @@ class Linker:
 
 def step_plan(config):
     s = config['sampling']
+    if not s.get('adjustments',True):
+        n,d = s['steps'],s['denoise']
+        if d <= 0:return 0,0,None
+        total = n if d > .9999 else int(n/d)
+        return total,n,total-n if total>n else None
     if config['mode'] == 'txt2img': return s['steps'], s['steps'], None
     d, n = s['denoise'], s['steps']
     if s['img2img_step_mode'] == 'exact_steps':
@@ -348,6 +360,27 @@ def step_plan(config):
     else:
         scheduled, t_enc = n, int(min(d, .999) * n)
     return scheduled, t_enc + 1, scheduled - t_enc - 1
+
+
+def core_names(sampling):
+    return ({'unipc':'uni_pc'}.get(sampling['sampler'],sampling['sampler']),
+            {'automatic':'normal','uniform':'normal','ddim':'ddim_uniform'}.get(sampling['scheduler'],sampling['scheduler']))
+
+
+def core_sigmas(config, model):
+    import comfy.samplers as core
+    s = config['sampling']
+    sampler,name = core_names(s)
+    if sampler not in core.SAMPLER_NAMES or name not in core.SCHEDULER_NAMES:
+        raise BridgeError('COMFY_UNSUPPORTED_SAMPLING',
+                          f'ComfyUI does not support {sampler} / {name}. Enable Sampling adjustments for Forge-only schedules, or choose a ComfyUI schedule.')
+    runner = core.KSampler(model,s['steps'],model.load_device,sampler=sampler,scheduler=name,denoise=s['denoise'])
+    sigmas = runner.sigmas.cpu()
+    scheduled,actual,start = step_plan(config)
+    return sigmas, {'resolved_scheduler':name,'scheduled_steps':scheduled,'launch_steps':actual,
+                    'total_denoiser_calls':actual*(2 if SAMPLER_OPTIONS[s['sampler']].get('second_order') else 1),
+                    'discard_applied':sampler in core.KSampler.DISCARD_PENULTIMATE_SIGMA_SAMPLERS,
+                    'full_sigmas':sigmas.tolist(),'slice_start':start,'backend':'comfy'}
 
 
 def generate_sigmas(config, predictor):

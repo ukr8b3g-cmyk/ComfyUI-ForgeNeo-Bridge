@@ -36,7 +36,7 @@ jobs:
           FORGE_REFERENCE: ${{ runner.temp }}/bridge-refs/forge
         run: python -m pytest -q --junitxml=pytest-results.xml
       - name: JavaScript contracts
-        run: node --test tests/frontend.test.mjs
+        run: node --test tests/accordion.test.mjs tests/frontend.test.mjs tests/help.test.mjs tests/layout.test.mjs tests/seed_controls.test.mjs
       - name: Syntax compilation
         run: python -m compileall -q bridge nodes.py vendor
       - name: Install isolated Core/browser harness dependencies

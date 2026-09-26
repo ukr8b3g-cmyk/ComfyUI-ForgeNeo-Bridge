@@ -7,6 +7,19 @@ from .spec import BridgeError, MAX_METADATA
 MAX_IMAGE = 128 * 1024 * 1024
 
 
+def image_dimensions(data: bytes):
+    """Read the container's output size without decoding pixels."""
+    from io import BytesIO
+    from PIL import Image
+    if len(data) > MAX_IMAGE:
+        raise BridgeError('IMPORT_LIMIT_EXCEEDED', 'Image exceeds 128 MiB')
+    try:
+        with Image.open(BytesIO(data)) as image:
+            return image.size
+    except (OSError, ValueError, Image.DecompressionBombError) as exc:
+        raise BridgeError('INVALID_METADATA', 'Cannot read source image dimensions') from exc
+
+
 def _text(data: bytes, encoding='utf-8') -> str:
     try: return data.decode(encoding).rstrip('\x00')
     except UnicodeError as exc: raise BridgeError('INVALID_METADATA', f'Invalid {encoding} metadata') from exc

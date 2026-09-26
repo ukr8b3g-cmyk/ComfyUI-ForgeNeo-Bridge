@@ -1,0 +1,331 @@
+{
+  "ForgeCompatSpec": {
+    "description": "旧形式のForge設定Specを作成します。",
+    "inputs": {
+      "source_mode": {
+        "tooltip": "旧Specノードの読み込み方法。manual/spec_jsonはJSON、imageは画像メタデータ、infotextは生成情報を読みます。"
+      },
+      "profile": {
+        "tooltip": "このBridgeが対応する実行プロファイルです。"
+      },
+      "policy": {
+        "tooltip": "strictは曖昧な設定を厳密に扱い、exploratoryは対応できる範囲を調べる用途です。未対応機能を自動的に実装する設定ではありません。"
+      },
+      "payload": {
+        "tooltip": "読み込むSpec JSONまたは生成情報テキスト。"
+      },
+      "overrides_json": {
+        "tooltip": "Specに適用する明示的な上書きJSON。通常は空オブジェクトです。"
+      },
+      "image_file": {
+        "tooltip": "ComfyUI入力フォルダーにある画像の相対ファイル名。"
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "同じ実行で共有するForge設定Spec。"
+      },
+      "1": {
+        "tooltip": "適用設定・警告・検証情報。"
+      }
+    }
+  },
+  "ForgeCompatText": {
+    "description": "旧形式のSpecからForgeテキスト条件を作成します。",
+    "inputs": {
+      "spec": {
+        "tooltip": "同じ実行で共有するForge設定Spec。"
+      },
+      "clip": {
+        "tooltip": "ローダーやLoRAノードからテキストエンコーダーを接続します。"
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "同じSpecで生成したForge条件を接続します。"
+      },
+      "1": {
+        "tooltip": "適用設定・警告・検証情報。"
+      }
+    }
+  },
+  "ForgeCompatNoise": {
+    "description": "旧形式のSpecから初期ノイズと再実行用の乱数状態を作成します。",
+    "inputs": {
+      "spec": {
+        "tooltip": "同じ実行で共有するForge設定Spec。"
+      },
+      "model": {
+        "tooltip": "ローダーやLoRAノードから生成モデルを接続します。"
+      },
+      "input_latent": {
+        "tooltip": "Empty Latent ImageやVAE Encodeのlatentを接続します。接続時はサイズ・枚数をこの入力から取得します。"
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "生成・準備したlatent。VAE Decodeなどに接続します。"
+      },
+      "1": {
+        "tooltip": "同じSpecとモデルから作った初期ノイズと乱数状態。"
+      },
+      "2": {
+        "tooltip": "適用設定・警告・検証情報。"
+      }
+    }
+  },
+  "ForgeCompatSampler": {
+    "description": "旧形式のSpec・条件・ノイズで生成します。新しい編集用ワークフローはBridge KSamplerを使います。",
+    "inputs": {
+      "spec": {
+        "tooltip": "同じ実行で共有するForge設定Spec。"
+      },
+      "model": {
+        "tooltip": "ローダーやLoRAノードから生成モデルを接続します。"
+      },
+      "conditioning": {
+        "tooltip": "同じSpecで生成したForge条件を接続します。"
+      },
+      "noise": {
+        "tooltip": "同じSpecとモデルから作った初期ノイズと乱数状態。"
+      },
+      "latent_image": {
+        "tooltip": "同じNoiseノードが出力したlatentを接続します。"
+      },
+      "trace_level": {
+        "tooltip": "noneは記録なし、summaryは数値情報、tensorsは検証用テンソルも保存します。tensorsは保存容量を使います。"
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "生成・準備したlatent。VAE Decodeなどに接続します。"
+      },
+      "1": {
+        "tooltip": "サンプリングに使用するノイズ量の列。"
+      },
+      "2": {
+        "tooltip": "適用設定・警告・検証情報。"
+      }
+    }
+  },
+  "ForgeNeoBridgeTextEncode": {
+    "description": "編集可能なプロンプト。実際のエンコード方式はSettingsで選びます。",
+    "inputs": {
+      "clip": {
+        "tooltip": "ローダーやLoRAノードからテキストエンコーダーを接続します。"
+      },
+      "text": {
+        "tooltip": "自由に編集できるプロンプト。Settingsの設定に従いKSampler内部でエンコードします。"
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "プロンプトと接続済みエンコーダー。"
+      }
+    }
+  },
+  "ForgeNeoBridgeSettings": {
+    "description": "互換処理と補助設定。各項目にマウスを重ねると説明を表示します。",
+    "inputs": {
+      "family": {
+        "tooltip": "使用するモデル種別。autoは接続したモデルから判定します。Forge互換で対応するのはSD1.5、SDXL、Animaです。"
+      },
+      "mode": {
+        "tooltip": "txt2imgは新規生成、img2imgは入力latentから生成します。Hiresの後段にはimg2imgを使います。"
+      },
+      "width": {
+        "tooltip": "入力latentがない場合の画像幅。接続済みの場合はlatentの幅を使います。"
+      },
+      "height": {
+        "tooltip": "入力latentがない場合の画像高さ。接続済みの場合はlatentの高さを使います。"
+      },
+      "batch_size": {
+        "tooltip": "入力latentがない場合に生成する枚数。接続済みの場合はlatentのバッチ数を使います。"
+      },
+      "emphasis": {
+        "tooltip": "Forgeの括弧による強調の処理方式。Originalは標準補正、No normは正規化なし、Ignoreは重みを無視、Noneは構文処理なし。Forge Neo互換ONで適用します。"
+      },
+      "clip_skip": {
+        "tooltip": "autoはモデルの既定値。整数は使用するCLIP層を末尾から指定します。モデル依存で、AnimaのForge経路には適用しません。補正OFFでも保持します。"
+      },
+      "comma_padding_backtrack": {
+        "tooltip": "長いプロンプトの区切り位置をカンマまで戻す最大トークン数。0で無効。Forge Neo互換ONで適用します。"
+      },
+      "rng": {
+        "tooltip": "初期ノイズの乱数方式。CPU、GPU（CUDA）、NVで同じシードでも結果が異なります。Forge Neo互換ONで適用します。"
+      },
+      "ensd": {
+        "tooltip": "途中ノイズの乱数シード差分。0で差分なし。Forge Neo互換とサンプリング差分補正がONの対応サンプラーで適用します。OFFでも値は保存します。"
+      },
+      "subseed": {
+        "tooltip": "バリエーション用の補助シード。変化量が0なら影響しません。Forge Neo互換ONで適用します。"
+      },
+      "subseed_strength": {
+        "tooltip": "主シードとサブシードのノイズを混ぜる量。0は主シード、1はサブシード。Forge Neo互換ONで適用します。"
+      },
+      "seed_resize_width": {
+        "tooltip": "元の構図を保つためのシード基準幅。基準の幅・高さがともに正のとき適用します。Forge Neo互換ONで適用します。"
+      },
+      "seed_resize_height": {
+        "tooltip": "元の構図を保つためのシード基準高さ。基準の幅・高さがともに正のとき適用します。Forge Neo互換ONで適用します。"
+      },
+      "eta_ancestral": {
+        "tooltip": "対応する確率的サンプラーの追加ノイズ量。サンプリング差分補正ONで、Eta対応サンプラーに適用します。"
+      },
+      "eta_ddim": {
+        "tooltip": "読み込んだForge DDIMのEtaを保持します。現在のComfy DDIM経路には適用されません。"
+      },
+      "s_churn": {
+        "tooltip": "対応サンプラーで途中に加えるノイズの強さ。0で無効。サンプリング差分補正ONで適用します。"
+      },
+      "s_tmin": {
+        "tooltip": "Churnを適用するsigmaの下限。サンプリング差分補正ONで適用します。"
+      },
+      "s_tmax": {
+        "tooltip": "Churnを適用するsigmaの上限。0は上限なし。サンプリング差分補正ONで適用します。"
+      },
+      "s_noise": {
+        "tooltip": "対応サンプラーが途中に加えるノイズの倍率。サンプリング差分補正ONで適用します。"
+      },
+      "sigma_min": {
+        "tooltip": "ノイズ量sigmaの下限。autoはモデル側の値。サンプリング差分補正ONで、対応スケジューラーに適用します。"
+      },
+      "sigma_max": {
+        "tooltip": "ノイズ量sigmaの上限。autoはモデル側の値。サンプリング差分補正ONで、対応スケジューラーに適用します。"
+      },
+      "rho": {
+        "tooltip": "Karrasなど対応スケジューラーの曲線パラメーター。autoは既定値。サンプリング差分補正ONで適用します。"
+      },
+      "beta_alpha": {
+        "tooltip": "Betaスケジューラーの分布形状alpha。サンプリング差分補正ONで適用します。"
+      },
+      "beta_beta": {
+        "tooltip": "Betaスケジューラーの分布形状beta。サンプリング差分補正ONで適用します。"
+      },
+      "discard_penultimate": {
+        "tooltip": "終端直前のsigmaを除外します。サンプラー自体が除外を指定する場合もあります。サンプリング差分補正ONで適用します。"
+      },
+      "sgm_noise_multiplier": {
+        "tooltip": "txt2img初期ノイズにSGM方式の倍率を使います。Animaには適用しません。サンプリング差分補正ONで適用します。"
+      },
+      "shift": {
+        "tooltip": "Animaのノイズ時刻のShift。autoは読み込み設定。サンプリング差分補正ONで適用し、他のモデルには適用しません。"
+      },
+      "skip_early_cfg": {
+        "tooltip": "初期区間でCFGを省略する割合。0で無効。サンプリング差分補正ONで適用します。"
+      },
+      "ngms": {
+        "tooltip": "負条件を省略するsigmaの閾値。0で無効。サンプリング差分補正ONで適用します。"
+      },
+      "ngms_all_steps": {
+        "tooltip": "NGMSの判定を交互のステップだけでなく毎回行います。サンプリング差分補正ONで適用します。"
+      },
+      "img2img_step_mode": {
+        "tooltip": "forge_scaledはdenoiseに応じて実行数を短縮し、exact_stepsは指定数を実行します。補正OFFはComfyUI標準の計算を使います。"
+      },
+      "img2img_extra_noise": {
+        "tooltip": "img2img開始時に加える追加ノイズ。0で無効。サンプリング差分補正ONで適用します。"
+      },
+      "original_width": {
+        "tooltip": "SDXLの元画像幅の条件。0は現在のlatent幅。Forge Neo互換ONで適用します。"
+      },
+      "original_height": {
+        "tooltip": "SDXLの元画像高さの条件。0は現在のlatent高さ。Forge Neo互換ONで適用します。"
+      },
+      "target_width": {
+        "tooltip": "SDXLの目標幅の条件。0は現在のlatent幅。画像自体のサイズ変更ではありません。Forge Neo互換ONで適用します。"
+      },
+      "target_height": {
+        "tooltip": "SDXLの目標高さの条件。0は現在のlatent高さ。画像自体のサイズ変更ではありません。Forge Neo互換ONで適用します。"
+      },
+      "crop_x": {
+        "tooltip": "SDXLに渡す横方向のクロップ条件。画像自体は切り抜きません。Forge Neo互換ONで適用します。"
+      },
+      "crop_y": {
+        "tooltip": "SDXLに渡す縦方向のクロップ条件。画像自体は切り抜きません。Forge Neo互換ONで適用します。"
+      },
+      "zero_empty_negative": {
+        "tooltip": "空のSDXLネガティブ条件をゼロ化します。Forge Neo互換ONで適用します。"
+      },
+      "source_json": {
+        "tooltip": "読み込んだ元設定を確認する欄。通常は編集不要です。生成には現在の各ノードの値を使います。"
+      },
+      "forge_compatibility": {
+        "tooltip": "ON: Forgeのテキスト処理・初期ノイズを使用。サンプリング補正は下の設定で選びます。OFF: ComfyUI標準のテキスト処理とKSamplerを使用。どちらもBridgeのインストールは必要です。"
+      },
+      "sampling_adjustments": {
+        "tooltip": "初期値OFF。Forge Neo互換ONのとき、OFFはComfyUIのサンプラー・スケジュールを使用し、ONはForge向けの内部処理差を補正します。画像の一致や見た目の近さは保証しません。旧ワークフローは従来動作を保つためONで読み込みます。"
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "KSamplerで使用する設定。"
+      }
+    }
+  },
+  "ForgeNeoBridgeKSampler": {
+    "description": "現在のノード設定で生成します。SettingsでForge互換とサンプリング補正を切り替えます。",
+    "inputs": {
+      "model": {
+        "tooltip": "ローダーやLoRAノードから生成モデルを接続します。"
+      },
+      "positive": {
+        "tooltip": "Bridge Text Encodeの正条件を接続します。"
+      },
+      "negative": {
+        "tooltip": "Bridge Text Encodeの負条件を接続します。"
+      },
+      "settings": {
+        "tooltip": "Bridge Settingsを接続します。互換処理と各補助設定を選べます。"
+      },
+      "seed": {
+        "tooltip": "乱数シード。矢印や数値入力で変更できます。生成ごとの変更方法はcontrol after generateで選びます。"
+      },
+      "steps": {
+        "tooltip": "サンプリングのステップ数。img2imgの実行数はdenoiseと補正設定にも依存します。"
+      },
+      "cfg": {
+        "tooltip": "プロンプトへ従う強さ。高い値が常に良い結果になるとは限りません。"
+      },
+      "sampler_name": {
+        "tooltip": "各ステップの計算方法。同名でもForgeとComfyUIで処理が異なる場合があります。補正ON/OFFで実行経路が変わります。"
+      },
+      "scheduler": {
+        "tooltip": "各ステップのノイズ量の並び。補正OFFでAutomaticとUniformはComfy Normal、DDIMはddim_uniformを使用します。Forge専用方式は補正ONが必要です。"
+      },
+      "denoise": {
+        "tooltip": "入力latentをどの程度変えるか。1は最大、0は補正OFFなら変更なし。Forge互換の実行数はステップ計算設定にも依存します。"
+      },
+      "input_latent": {
+        "tooltip": "Empty Latent ImageやVAE Encodeのlatentを接続します。接続時はサイズ・枚数をこの入力から取得します。"
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "生成・準備したlatent。VAE Decodeなどに接続します。"
+      }
+    }
+  },
+  "ForgeNeoBridgeScheduler": {
+    "description": "ComfyUIのsigma列に末尾直前除外を適用します。Settingsの切替とは独立した専用ノードです。",
+    "inputs": {
+      "model": {
+        "tooltip": "ローダーやLoRAノードから生成モデルを接続します。"
+      },
+      "scheduler": {
+        "tooltip": "ComfyUI標準スケジューラーを選びます。"
+      },
+      "steps": {
+        "tooltip": "末尾直前のsigmaを除外した後に使用するサンプリングの区間数。"
+      },
+      "denoise": {
+        "tooltip": "全スケジュールのうち使用する範囲。0は空のsigma列を返します。"
+      }
+    },
+    "outputs": {
+      "0": {
+        "tooltip": "サンプリングに使用するノイズ量の列。"
+      }
+    }
+  }
+}

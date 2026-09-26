@@ -8,6 +8,7 @@ import gc
 import importlib.util
 import json
 import sys
+from itertools import product
 from types import MappingProxyType
 
 root=Path(__file__).resolve().parents[1]
@@ -25,7 +26,8 @@ import comfy.sample
 
 module_spec=importlib.util.spec_from_file_location('fnb_smoke',root/'__init__.py',submodule_search_locations=[str(root)])
 bridge=importlib.util.module_from_spec(module_spec);sys.modules[module_spec.name]=bridge;module_spec.loader.exec_module(bridge)
-from fnb_smoke.bridge.spec import default_document,finalize,canonical
+from fnb_smoke.bridge.spec import SAMPLERS,COMFY_SHARED_SAMPLERS,default_document,finalize,canonical
+from fnb_smoke.bridge.binding import latent_shape
 from fnb_smoke.bridge.noise import generate_noise
 from fnb_smoke.bridge.text import ConditioningBundle
 from fnb_smoke.bridge.runtime import execute
@@ -47,15 +49,29 @@ class AnalyticDiffusion(torch.nn.Module):
 
 functions=(comfy.sample.prepare_noise,comfy.samplers.calc_cond_batch,comfy.samplers.KSampler.sample)
 results=[]
+base_pairs=[('euler','simple'),('er_sde','beta'),('dpmpp_2m_sde','exponential'),
+            ('lcm','karras'),('lms','karras'),('res_multistep','simple'),
+            ('dpmpp_sde','karras'),('dpmpp_3m_sde','exponential')]
+cases=([(name,'simple',cfg,mode) for name,cfg,mode in product(COMFY_SHARED_SAMPLERS,(1.,2.),('txt2img','img2img'))]
+       if '--shared-only' in sys.argv else [(name,schedule,2.,'txt2img') for name,schedule in base_pairs])
+unadjusted='--unadjusted' in sys.argv or '--zero-denoise' in sys.argv
+if unadjusted:
+    cases=[(name,'simple',cfg,mode) for name,cfg,mode in product(SAMPLERS,(1.,2.),('txt2img','img2img'))]
+if '--zero-denoise' in sys.argv:cases=[('euler','simple',2.,'img2img')]
 for family,klass,cfgclass in [('anima',mb.Anima,supported.Anima),('sd15',mb.BaseModel,supported.SD15),('sdxl',mb.SDXL,supported.SDXL)]:
     config=cfgclass({'disable_unet_model_creation':True,'in_channels':16 if family=='anima' else 4})
     config.set_inference_dtype(torch.float32,None)
     model=klass(config,device=torch.device('cpu'))
     model.diffusion_model=AnalyticDiffusion()
     patcher=mp.ModelPatcher(model,torch.device('cpu'),torch.device('cpu'))
-    for sampler,scheduler in [('euler','simple'),('er_sde','beta'),('dpmpp_2m_sde','exponential')]:
+    for sampler,scheduler,cfg_scale,mode in cases:
         d=default_document(family)
-        c=d['effective'];c['image'].update(width=64,height=64,batch_size=1);c['sampling'].update(sampler=sampler,scheduler=scheduler,steps=4,cfg=2.)
+        c=d['effective'];c['mode']=mode;c['image'].update(width=64,height=64,batch_size=1)
+        c['sampling'].update(sampler=sampler,scheduler=scheduler,steps=4,cfg=cfg_scale,
+                             denoise=.45 if mode=='img2img' else 1.,img2img_step_mode='exact_steps')
+        c['noise']['ensd']='31337'
+        if unadjusted:c['sampling']['adjustments']=False
+        if '--zero-denoise' in sys.argv:c['sampling']['denoise']=0
         c['assets']=[dict(asset_id=role,role=role,component=None,category=cat,relative_name='synthetic.safetensors',sha256=None,short_hash=None,resolution='resolved',binding_verification='known_loader_chain') for role,cat in [('model','diffusion_models'),('text_encoder','text_encoders'),('vae','vae')]]
         spec=finalize(d);binding={'hash':'smoke-test-only','chain':[],'assets':[]}
         extra={}
@@ -65,15 +81,27 @@ for family,klass,cfgclass in [('anima',mb.Anima,supported.Anima),('sd15',mb.Base
         entries=MappingProxyType({'p':(torch.ones(1,3,8),extra),'n':(torch.zeros(1,3,8),copy.deepcopy(extra))})
         cond=ConditioningBundle(spec.config_hash,family,canonical(binding),(),((1.,((4,'p'),)),),((None,((4,'n'),)),),entries,'{}')
         before=torch.random.get_rng_state().clone();options=copy.deepcopy(patcher.model_options);objects=patcher.object_patches.copy()
-        latent,noise=generate_noise(spec,patcher,binding)
-        a,_,facts,tensors=execute(spec,patcher,cond,noise,latent,binding,'tensors')
+        input_latent={'samples':torch.full(latent_shape(patcher,c),.1)} if mode=='img2img' else None
+        latent,noise=generate_noise(spec,patcher,binding,input_latent)
+        a,sigmas,facts,tensors=execute(spec,patcher,cond,noise,latent,binding,'tensors')
         b,_,_,_=execute(spec,patcher,cond,noise,latent,binding,'summary')
         assert torch.equal(a['samples'],b['samples'])
+        assert torch.isfinite(a['samples']).all()
         assert torch.equal(before,torch.random.get_rng_state())
         assert patcher.model_options==options and patcher.object_patches==objects
         assert (comfy.sample.prepare_noise,comfy.samplers.calc_cond_batch,comfy.samplers.KSampler.sample)==functions
         assert tensors['final_latent'].shape==a['samples'].shape
-        if sampler=='euler':
+        if unadjusted:
+            guider=comfy.samplers.CFGGuider(patcher)
+            entries=cond.cloned_entries();guider.set_conds(entries['p'],entries['n']);guider.set_cfg(cfg_scale)
+            core_sampler=comfy.samplers.sampler_object({'unipc':'uni_pc'}.get(sampler,sampler))
+            with torch.random.fork_rng(devices=[]),torch.inference_mode():
+                expected=guider.sample(noise.initial.clone(),latent['samples'].clone(),core_sampler,sigmas.clone(),
+                                      disable_pbar=True,seed=noise.seeds[0])
+            torch.testing.assert_close(a['samples'],expected,rtol=1e-6,atol=1e-6,msg=lambda m:f'{family}/{sampler}/{mode}/CFG {cfg_scale}: {m}')
+            assert facts['sampler_implementation']['backend']=='comfy'
+            assert '/noise/ensd' in facts['not_applied']
+        if sampler=='euler' and c['sampling']['denoise']>0:
             model.diffusion_model.interrupt=True
             try:execute(spec,patcher,cond,noise,latent,binding)
             except InterruptedError:pass
@@ -81,10 +109,15 @@ for family,klass,cfgclass in [('anima',mb.Anima,supported.Anima),('sd15',mb.Base
             finally:model.diffusion_model.interrupt=False
             after,_,_,_=execute(spec,patcher,cond,noise,latent,binding)
             assert torch.equal(after['samples'],a['samples'])
-        results.append({'family':family,'sampler':sampler,'status':'PASS','shape':list(a['samples'].shape),'hash':facts['final_latent_hash']})
+        results.append({'family':family,'sampler':sampler,'cfg':cfg_scale,'mode':mode,
+                        'implementation':facts['sampler_implementation'],'status':'PASS',
+                        'shape':list(a['samples'].shape),'hash':facts['final_latent_hash']})
     mm.unload_all_models()
     del patcher, model
     gc.collect()
+if '--sampling-only' in sys.argv or '--shared-only' in sys.argv or unadjusted:
+    print(json.dumps({'test':'actual_comfy_cpu_analytic_sampling','pretrained_weights':False,'gpu':False,'results':results},indent=2))
+    raise SystemExit(0)
 # Real Comfy transformer classes, small synthetic weights/tokenizers. This checks
 # call signatures, layer selection, pooled outputs and masks, not model quality.
 from types import SimpleNamespace as NS

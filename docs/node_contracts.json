@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "implementation_status": "NOT_IMPLEMENTED",
+  "implementation_status": "LOCAL_IMPLEMENTATION_LIVE_API_TESTED",
   "nodes": [
     {
       "class_id": "ForgeCompatSpec",
@@ -96,10 +96,32 @@
           "STRING"
         ]
       ]
+    },
+    {
+      "class_id": "ForgeNeoBridgeTextEncode",
+      "display_name": "ForgeNeo Bridge Text Encode",
+      "required_inputs": {"clip": "CLIP", "text": "STRING"},
+      "optional_inputs": {},
+      "outputs": [["text", "FORGE_TEXT_INPUT"]]
+    },
+    {
+      "class_id": "ForgeNeoBridgeSettings",
+      "display_name": "ForgeNeo Bridge Settings",
+      "required_inputs": {"family": "auto|anima|sd15|sdxl", "mode": "txt2img|img2img", "width": "INT (legacy fallback without latent)", "height": "INT (legacy fallback without latent)", "batch_size": "INT (legacy fallback without latent)", "source_json": "STRING (provenance only)", "details": "text, RNG, sampling, CFG, img2img and SDXL widgets"},
+      "optional_inputs": {"forge_compatibility": "BOOLEAN (default true; false explicitly selects core Comfy processing)", "sampling_adjustments": "BOOLEAN (default false; optional Forge sampling corrections while compatibility is on; old workflows migrate to true)"},
+      "outputs": [["settings", "FORGE_SETTINGS"]]
+    },
+    {
+      "class_id": "ForgeNeoBridgeKSampler",
+      "display_name": "ForgeNeo Bridge KSampler",
+      "required_inputs": {"model": "MODEL", "positive": "FORGE_TEXT_INPUT", "negative": "FORGE_TEXT_INPUT", "settings": "FORGE_SETTINGS", "seed": "STRING uint64", "steps": "INT", "cfg": "FLOAT", "sampler_name": "COMBO", "scheduler": "COMBO", "denoise": "FLOAT"},
+      "optional_inputs": {"input_latent": "LATENT (connected latent controls size and batch; required for img2img)"},
+      "outputs": [["latent", "LATENT"]]
     }
   ],
   "invariants": [
-    "The single Spec is authoritative; downstream seed/steps/CFG overrides are prohibited.",
+    "Legacy ForgeCompat workflows keep the single-Spec authority contract.",
+    "ForgeNeoBridgeKSampler with compatibility ON builds its run Spec from current widgets and connected loader/LoRA chains. OFF calls core CLIPTextEncode/CLIPSetLastLayer/KSampler directly with current objects and widgets.",
     "Tensors, mutable generators, model references and callable objects never enter JSON Spec.",
     "All bundles must match the Spec config_hash and live model/asset/shape binding.",
     "No automatic prompt LoRA loading inside sampler.",

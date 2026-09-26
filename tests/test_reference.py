@@ -72,8 +72,9 @@ class TorchProxy:
 def source_sampling(rng):
     names={'_is_const','append_zero','to_d','get_ancestral_step','default_noise_sampler','sigma_to_half_log_snr','half_log_snr_to_sigma','offset_first_sigma_for_snr',
       'sample_euler','sample_euler_ancestral','sample_euler_ancestral_RF','sample_er_sde','sample_dpmpp_2m','sample_dpmpp_2m_sde','sample_dpm_2','sample_heun',
+      'sample_lcm','sample_lms','linear_multistep_coeff','sample_dpmpp_sde','sample_dpmpp_3m_sde','res_multistep','sample_res_multistep',
       'get_sigmas_karras','get_sigmas_exponential','get_sigmas_polyexponential'}
-    ns={'torch':TorchProxy(rng),'math':math,'partial':partial,'trange':lambda n,**kw:range(n),'utils':types.SimpleNamespace(append_dims=lambda x,n:x[(...,)+(None,)*(n-x.ndim)])}
+    ns={'torch':TorchProxy(rng),'math':math,'partial':partial,'integrate':integrate,'trange':lambda n,**kw:range(n),'utils':types.SimpleNamespace(append_dims=lambda x,n:x[(...,)+(None,)*(n-x.ndim)])}
     definitions('modules_forge/packages/k_diffusion/sampling.py',ns,names)
     # sd_schedulers overrides this in Forge at import; emulate only in oracle namespace.
     ns['to_d']=lambda x,s,d:(x-d)/s
@@ -115,7 +116,8 @@ class AnalyticDenoiser:
         # Finite nonlinear deterministic function, independent of real trained weights.
         self.calls.append(float(sigma[0]));return x*.125+torch.sin(sigma).reshape((-1,)+(1,)*(x.ndim-1))*.075
 
-PAIRS=[('euler','simple'),('euler','beta'),('er_sde','beta'),('euler_ancestral','simple'),('dpmpp_2m','karras'),('dpm_2','karras'),('heun','simple')]
+PAIRS=[('euler','simple'),('euler','beta'),('er_sde','beta'),('euler_ancestral','simple'),('dpmpp_2m','karras'),('dpm_2','karras'),('heun','simple'),
+       ('lcm','karras'),('lms','karras'),('res_multistep','simple')]
 @pytest.mark.parametrize('family',['anima','sd15','sdxl'])
 @pytest.mark.parametrize('pair',PAIRS)
 @pytest.mark.parametrize('mode',['txt2img','scaled','exact'])
@@ -167,12 +169,13 @@ def test_sgm_scaling(family):
 
 @pytest.mark.parametrize('source',['CPU','NV'])
 @pytest.mark.parametrize('family',['anima','sd15','sdxl'])
-def test_brownian_and_sde(source,family):
+@pytest.mark.parametrize('sampler',['dpmpp_2m_sde','dpmpp_sde','dpmpp_3m_sde'])
+def test_brownian_and_sde(source,family,sampler):
     torchsde=pytest.importorskip('torchsde')
     from torchsde._brownian import brownian_interval
     from fnb.bridge.brownian import make_brownian
     from fnb.bridge.rng import randn_local
-    cfg=default_document(family)['effective'];cfg['sampling'].update(sampler='dpmpp_2m_sde',scheduler='exponential',steps=6)
+    cfg=default_document(family)['effective'];cfg['sampling'].update(sampler=sampler,scheduler='exponential',steps=6)
     shape=(16,1,4,4) if family=='anima' else (4,4,4)
     ours_rng=ImageRNG(RNGConfig(source,'cpu'),shape,[42,43]);x=ours_rng.next()
     pred=Predictor(predictor(family),cfg['prediction_type']);sigmas,info=generate_sigmas(cfg,pred)
@@ -196,7 +199,7 @@ def test_brownian_and_sde(source,family):
             start=pred.ms.noise_scaling(sigmas[0],ref_x,torch.zeros_like(x),False)
             # New reference tree: the sequence of calls matters to the Brownian cache.
             trees=[torchsde.BrownianTree(t0,torch.zeros_like(x[0]),t1,entropy=s) for s in (42,43)]
-            expected=funcs['sample_dpmpp_2m_sde'](ref_model,start,sigmas,disable=True,noise_sampler=ref_noise,eta=1.,s_noise=1.)
+            expected=funcs['sample_'+sampler](ref_model,start,sigmas,disable=True,noise_sampler=ref_noise,eta=1.,s_noise=1.)
             assert torch.equal(actual,expected)
         finally:
             brownian_interval._randn=before

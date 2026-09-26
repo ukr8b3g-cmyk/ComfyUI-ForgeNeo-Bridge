@@ -69,8 +69,16 @@ def generate_noise(spec,model,binding,input_latent=None):
         samples=check_latent(input_latent,shape)
         latent=copy.copy(input_latent);latent['samples']=samples.clone()
     else:
-        if input_latent is not None:raise BridgeError('LATENT_MISMATCH','txt2img must not consume an input latent')
-        latent={'samples':torch.zeros(shape,dtype=torch.float32,device='cpu')}
+        if input_latent is None:
+            latent={'samples':torch.zeros(shape,dtype=torch.float32,device='cpu')}
+        else:
+            import comfy.sample
+            latent=copy.copy(input_latent)
+            latent['samples']=comfy.sample.fix_empty_latent_channels(model,input_latent['samples'],
+                input_latent.get('downscale_ratio_spacial'),input_latent.get('downscale_ratio_temporal'))
+            samples=check_latent(latent,shape)
+            if torch.count_nonzero(samples):raise BridgeError('LATENT_MISMATCH','txt2img requires an empty latent')
+            latent['samples']=samples.clone()
     device=model.load_device
     rng=make_rng(cfg,shape[1:],device)
     initial=rng.next().detach().cpu().float()

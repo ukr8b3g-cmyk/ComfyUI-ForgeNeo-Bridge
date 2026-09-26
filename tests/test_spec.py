@@ -58,9 +58,17 @@ def test_policy_and_unknown_fields(document):
     with pytest.raises(BridgeError):finalize(document)
 
 def test_unimplemented_preserved(document):
-    d=finalize(document,{'/sampling/sampler':'ddim'})
-    assert d.config['sampling']['sampler']=='ddim'
+    d=finalize(document,{'/sampling/sampler':'plms'})
+    assert d.config['sampling']['sampler']=='plms'
     with pytest.raises(BridgeError,match='UNSUPPORTED'):d.require_executable()
+
+
+@pytest.mark.parametrize('name',['ddim','unipc','euler_cfg_pp','euler_ancestral_cfg_pp','dpmpp_2m_cfg_pp'])
+def test_shared_solver_is_usable_without_removing_other_validation(document,name):
+    spec=finalize(document,{'/sampling/sampler':name})
+    assert spec.require_executable()['sampling']['sampler']==name
+    document['effective']['assets']=[]
+    with pytest.raises(BridgeError):finalize(document,{'/sampling/sampler':name}).require_executable()
 
 
 def test_imported_unsupported_information_is_not_discarded(document):

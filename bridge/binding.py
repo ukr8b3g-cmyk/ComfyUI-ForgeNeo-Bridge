@@ -28,13 +28,18 @@ def category_path(category, name):
         roots = [Path(folder_paths.get_input_directory()).resolve()]
         candidate = roots[0] / name
     else:
-        roots = [Path(p).resolve() for p in folder_paths.get_folder_paths(category)]
+        roots = [Path(p).absolute() for p in folder_paths.get_folder_paths(category)]
         found = folder_paths.get_full_path(category, name)
         if found is None:
             raise BridgeError('ASSET_MISSING', f'{category}/{name}')
-        candidate = Path(found)
+        candidate = Path(found).absolute()
+        # Comfy's registered model folders deliberately support file/directory
+        # symlinks (including Stability Matrix's shared model store). Verify the
+        # registered entry before resolving it, then stat/hash its actual target.
+        if not any(candidate == root / name for root in roots):
+            raise BridgeError('INVALID_PATH', 'Asset is not an entry in its registered category')
     candidate = candidate.resolve()
-    if not any(candidate.is_relative_to(root) for root in roots):
+    if category == 'input' and not any(candidate.is_relative_to(root) for root in roots):
         raise BridgeError('INVALID_PATH', 'Asset escapes its registered category root')
     if not candidate.is_file():
         raise BridgeError('ASSET_MISSING', f'{category}/{name}')
@@ -147,7 +152,12 @@ def validate_model(model, cfg):
     if family == 'anima': ok = isinstance(predictor, ms.CONST)
     else: ok = isinstance(predictor, ms.EPS) and not isinstance(predictor, (ms.V_PREDICTION, ms.CONST))
     if not ok: raise BridgeError('UNSUPPORTED_COMBINATION', 'Actual prediction type differs from the approved profile')
-    if getattr(model, 'object_patches', {}) or getattr(model, 'attachments', {}):
+    attachments = getattr(model, 'attachments', {}) or {}
+    # Core LoraLoader passes safetensors header metadata through this attachment.
+    # It does not patch inference behavior; the loader chain and LoRA file were
+    # already verified against cfg before this function is called.
+    core_lora_metadata = bool(cfg['loras']) and isinstance(attachments, dict) and set(attachments) == {'lora_metadata'}
+    if getattr(model, 'object_patches', {}) or (attachments and not core_lora_metadata):
         raise BridgeError('UNVERIFIED_PATCH_CHAIN', 'Object patches/attachments require a separate adapter')
     def contains_hooks(value):
         if callable(value): return True
