@@ -69,8 +69,8 @@ ERNIE、Z-Image、Qwen-Image（2.1を含む）、Krea2、Flux.1、Flux.2 Klein/D
 | 系統 | 復元する処理 | 検証範囲 |
 |---|---|---|
 | Z-Image / ERNIE | 非適用のClip Skipで停止しない。Z-ImageはModelSamplingAuraFlow、ERNIEはModelSamplingSD3でShiftと時刻尺度を保持 | ユーザー承認の互換モデルでGPU生成・出力目視確認済み。Z-Image：Qwen3 4B safetensors、1024×1344、9ステップ。ERNIE：QT v2 MXFP8、848×1264、8ステップ。元の重みとの完全一致は未検証 |
-| Qwen-Image / Edit 2511・2509 | 参照なしはCLIPTextEncode、編集時はTextEncodeQwenImageEditPlus。モデル内蔵Shiftを保持 | 2511 int8 + Lightning LoRAの1024×1024、LCM 8ステップがGPU完走（55.89秒）。2509と編集用参照画像経路はGPU未検証。画像の完全一致は未達 |
-| Qwen-Image-Edit 初代 | 編集時はTextEncodeQwenImageEdit | 仕様・配線テストのみ。GPU未検証 |
+| Qwen-Image / Edit 2511・2509 | 参照なしはCLIPTextEncode、編集時は正負両方をTextEncodeQwenImageEditPlusで同じ画像・VAEへ接続。モデル内蔵Shiftを保持 | 2511 int8 + Lightning LoRAの1024×1024、LCM 8ステップがGPU完走（55.89秒）。2509と編集用参照画像経路はGPU未検証。画像の完全一致は未達 |
+| Qwen-Image-Edit 初代 | 編集時は正負両方をTextEncodeQwenImageEditで同じ画像・VAEへ接続 | 仕様・配線テストのみ。GPU未検証 |
 | Flux.1 Dev / Schnell | DualCLIPLoader、DevのDistilled CFG、Schnellの4ステップ初期値 | モデル未所持。公式仕様・配線テストのみ、GPU未検証 |
 | Qwen-Image 2.1 / Krea2 / Flux.2 | 既存のモデル別レシピ | 今回のGPU再検証は未実施。Qwen 2.1の参照画像編集は未対応 |
 

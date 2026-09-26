@@ -59,7 +59,8 @@ class Denoiser:
         cond=self.conditions(self.bundle.positive)
         uncond=self.conditions(self.bundle.negative) if self.bundle.negative else None
         opts=merge_options(self.options,extra.get('model_options',{}))
-        if math.isclose(cfg,1.0) and not opts.get('disable_cfg1_optimization',False):uncond=None
+        needs_negative=SAMPLER_OPTIONS[self.config['sampling']['sampler']].get('requires_uncond_at_cfg1',False)
+        if math.isclose(cfg,1.0) and not needs_negative and not opts.get('disable_cfg1_optimization',False):uncond=None
         # Standard V1 paths have no third-party CFG callbacks; validation rejects them.
         pos,neg=comfy.samplers.calc_cond_batch(self.guider.inner_model,[cond,uncond],x,sigma,opts)
         strength=sum(c.get('strength',1) for c in cond)
@@ -159,11 +160,11 @@ class BridgeSampler:
     def __init__(self,config,predictor,bundle,noise_bundle,schedule_info,trace_level):
         self.config,self.predictor,self.bundle,self.noise_bundle=config,predictor,bundle,noise_bundle
         self.schedule_info,self.trace_level=schedule_info,trace_level
-        self.calls=[];self.step_trace=[];self.tensor_trace={};self.conditioning_trace={}
+        self.calls=[];self.step_trace=[];self.tensor_trace={};self.conditioning_trace={};self.denoiser_calls=0
     def sample(self,model_wrap,sigmas,extra_args,callback,noise,latent_image=None,denoise_mask=None,disable_pbar=False):
         if denoise_mask is not None:raise BridgeError('UNSUPPORTED_COMBINATION','Masks are outside the V1 profile')
         # Hash the actual post-adapter conditions, separately from Qwen outputs.
-        if self.trace_level!='none':
+        if self.trace_level=='tensors':
             for key,entries in model_wrap.conds.items():
                 for i,entry in enumerate(entries):
                     for name,value in entry.get('model_conds',{}).items():
@@ -171,10 +172,10 @@ class BridgeSampler:
                         if isinstance(data,torch.Tensor):
                             self.conditioning_trace[f'{key}.{i}.{name}']={'hash':tensor_hash(data),'dtype':dtype_name(data.dtype),'shape':list(data.shape)}
         options=extra_args.get('model_options',{}).copy()
-        denoiser=Denoiser(model_wrap,self.predictor,self.config,self.bundle,options,self.schedule_info['total_denoiser_calls'],self.calls if self.trace_level!='none' else None)
+        denoiser=Denoiser(model_wrap,self.predictor,self.config,self.bundle,options,self.schedule_info['total_denoiser_calls'],self.calls if self.trace_level=='tensors' else None)
         def on_step(data):
             if callback:callback(data['i'],data['denoised'],data['x'],len(sigmas)-1)
-            if self.trace_level!='none':self.step_trace.append({'step':data['i'],'sigma':float(data.get('sigma',sigmas[min(data['i'],len(sigmas)-1)])),'latent_hash':tensor_hash(data['x'])})
+            if self.trace_level=='tensors':self.step_trace.append({'step':data['i'],'sigma':float(data.get('sigma',sigmas[min(data['i'],len(sigmas)-1)])),'latent_hash':tensor_hash(data['x'])})
             if self.trace_level=='tensors':self.tensor_trace[f'step_{data["i"]:04d}']=data['x'].detach().cpu().clone()
         if self.config['sampling'].get('adjustments',True):
             rng=self.noise_bundle.replay(self.config,noise.device)
@@ -193,6 +194,7 @@ class BridgeSampler:
                                 latent_image=latent_image,denoise_mask=None,disable_pbar=disable_pbar)
         if self.trace_level=='tensors':
             self.tensor_trace.update(initial_noise=noise.detach().cpu().clone(),final_sampling_latent=out.detach().cpu().clone(),sigmas=sigmas.detach().cpu().clone())
+        self.denoiser_calls=denoiser.call
         return out
 
 
@@ -261,6 +263,7 @@ def execute(spec,model,bundle,noise_bundle,latent,binding,trace_level='summary',
         if trace_level=='tensors':sampler.tensor_trace['final_latent']=output.detach().cpu().clone()
         facts={'schedule':info,'sampler_implementation':sampler_implementation(cfg['sampling']['sampler'],adjustments),
                'calls':sampler.calls,'steps':sampler.step_trace,'post_adapter_conditions':sampler.conditioning_trace,
+               'denoiser_calls':sampler.denoiser_calls,
                'final_latent_hash':tensor_hash(output),'model_binding':binding,'text_binding':parse_json(bundle.binding_json),
                'numeric':{'sampling_dtype':dtype_name(output.dtype),'model_dtype':dtype_name(model.model_dtype()),'text':parse_json(bundle.trace_json)},
                'environment':{'torch':torch.__version__,'cuda':torch.version.cuda,'device':str(model.load_device)},

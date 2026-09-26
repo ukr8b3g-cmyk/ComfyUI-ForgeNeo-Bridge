@@ -458,7 +458,9 @@ def test_qwen_edit_versions_use_reference_conditioning_only_with_source(version,
     source=next(n for n in plan['nodes'] if n['type']=='LoadImage')
     encode=next(n for n in plan['nodes'] if n['type']==node)
     assert [source['id'],0,encode['id'],port] in plan['edges']
-    assert any(n['type']=='CLIPTextEncode' and n['values']['text']=='blur' for n in plan['nodes'])
+    negative=next(n for n in plan['nodes'] if n['type']==node and n['values']['prompt']=='blur')
+    assert [source['id'],0,negative['id'],port] in plan['edges']
+    assert next(e[:2] for e in plan['edges'] if e[2:]==[encode['id'],'vae'])==next(e[:2] for e in plan['edges'] if e[2:]==[negative['id'],'vae'])
     assert any('original input' in n for n in plan['notes'])
 
 

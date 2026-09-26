@@ -69,6 +69,8 @@ Wan動画は対象外です。Lumina2／PiDは対応レシピがなく、誤っ�
 
 `auto`は万能な互換モードではなく、**明示値がない項目を、モデルや対応プロファイルに従って扱う表示**です。Clip Skip、Shift、Sigma min/max、Rhoなどで使われます。`automatic`というScheduler名は別の設定です。Z-Image・Qwen・ERNIEなどの標準ノード経路と、Bridge専用Samplerの設定は区別してください。
 
+Z-Image／ERNIE画像の`Shift: 0`は、Forge Neoではモデル側の既定Shiftを保つ指定です。Bridgeも元の`0`を読み込み情報に残し、標準ComfyUIノードには既定値`3.0`を設定します。画像に指定されたVAEやText EncoderがComfyUIにない場合は読み込み警告を確認し、使用するファイルを選び直してください。
+
 ### Settings：普段使う項目
 
 <img src="docs/media/settings.png" width="350" alt="ForgeNeo Bridge Hires Settingsの基本項目">
@@ -147,6 +149,8 @@ Wan動画は対象外です。Lumina2／PiDは対応レシピがなく、誤っ�
 
 専用Samplerでも、読み込み後に**Seed・Steps・CFG・Sampler・Scheduler・denoiseを変更できます**。Seedは矢印・直接入力で編集し、`control after generate`で`fixed / increment / decrement / randomize`を選べます。新規読み込みはfixedです。ComfyUIの生成前／生成後のシード更新設定にも従います。
 
+CFG++の3種類（Euler CFG++／Euler a CFG++／DPM++ 2M CFG++）では、CFG 1でも負の条件を計算します。シードが64-bitの上限を超える設定は、バッチや適用中のENSDを含めて実行前にエラーとして知らせます。補正OFFのENSDは保存されますが、乱数生成には加算しません。
+
 接続したLatentが基本サイズを決めます。標準Loader・Latent・VAE・保存ノードの名前は変更しません。保存済みの4つの旧ForgeCompatノードも互換用に残しています。
 
 ### Hires.fix
@@ -180,7 +184,7 @@ Sampler下のプレビュー用余白と、保存画像を大きく表示する�
 
 - **MiniMax H3／LTXとの共存を考慮した設計：** ComfyUI全体のSampler関数や共有乱数状態を書き換えません。CPU試験で共有状態の保持を確認しています。ただしH3／LTXとの実生成による無干渉検証は未実施で、「すべての構成で競合しない」とは保証しません。
 - Bridge専用Noise／Samplerへ動画モデルを誤接続した場合は拒否します。通常の動画ワークフローを書き換えません。他の拡張が行ったグローバルな変更を取り消す機能はありません。
-- **整列の既知の問題：** グループ枠を含むコピー＆ペースト後の再整列では、古いグループIDにより枠が重複したり、別の手動枠が削除されたりする場合があります。コピー後の整列は避けてください。
+- 整列で新たに作る枠には所有情報を保存し、コピー＆ペーストや再読み込み後も、対象ノードがそろっている場合だけその枠を置き換えます。手動の枠や一部しか選択していない枠は残します。旧版で作成した所有情報のない枠は安全のため自動削除しないので、旧ワークフローでは最初の再整列時に枠が重なる場合があります。
 - モデル不足・未対応設定は具体的なエラーにします。OOM時にサイズや精度を勝手に下げません。Sampler名が同じでも内部処理が同一とは限りません。
 
 [サンプラー／Scheduler対応表と詳しい設定](docs/TECHNICAL_REFERENCE_JA.md) · [検証記録](docs/VALIDATION.md) · [実装仕様](docs/SPEC_JA.md) · [変更履歴](CHANGELOG.md)
@@ -257,6 +261,8 @@ Workflow reconstruction and image similarity are separate capabilities.
 Wan video is outside scope. Lumina2/PiD have no supported recipe and are not routed through an inappropriate Checkpoint Loader. Formats requiring extra loaders, such as GGUF, are not guaranteed to execute with standard loaders. An edited output's metadata cannot recover its missing reference/input images.
 
 `auto` is not a universal compatibility mode. It indicates that an unspecified field follows the model or supported profile. Examples include Clip Skip, Shift, Sigma min/max and Rho. The `automatic` scheduler is a separate setting. Native model recipes for Z-Image, Qwen, ERNIE and others are distinct from the dedicated Bridge Sampler path.
+
+For Z-Image and ERNIE, a source `Shift: 0` asks Forge Neo to keep the model's default Shift. Bridge retains the original `0` in import information and uses the native ComfyUI recipe's default Shift of `3.0`. If the image's VAE or text encoder is absent from ComfyUI's registered files, review the import warning and choose an installed file before running.
 
 ### Settings: everyday controls
 
@@ -338,6 +344,8 @@ The dedicated sampler still lets you edit **Seed, Steps, CFG, Sampler, Scheduler
 
 The connected latent controls base dimensions. Standard loaders, latent, VAE and save nodes retain their original names. The four legacy ForgeCompat nodes remain available for older workflows.
 
+The three CFG++ samplers (Euler CFG++, Euler a CFG++, and DPM++ 2M CFG++) calculate the negative condition even at CFG 1. Batch seed offsets and active ENSD are checked against the 64-bit limit before execution. ENSD remains saved but is not added to the RNG when Sampling adjustments is OFF.
+
 ### Hires.fix
 
 Supported for **SD1.5, SDXL and Anima using the same model, text encoder and VAE**. Lanczos creates this editable chain:
@@ -369,7 +377,7 @@ These approximately 23-second videos use user-provided screenshots, localized fe
 
 - **Designed with MiniMax H3/LTX coexistence in mind:** Bridge does not replace global ComfyUI sampler functions or shared RNG state. CPU tests check shared-state preservation. End-to-end H3/LTX GPU coexistence is still unverified; conflict-free operation in every setup is not guaranteed.
 - Video models mistakenly connected to the dedicated Bridge Noise/Sampler are rejected. Normal video workflows are not rewritten. Bridge does not undo global changes made by other extensions.
-- **Known arrangement issue:** After copying/pasting groups together with nodes, stale group IDs can cause duplicate frames or deletion of an unrelated manually created frame. Avoid arranging a graph after group copy/paste.
+- Newly arranged groups store ownership information. After copy/paste or reload, Bridge replaces a frame only when all of its current member nodes are selected. Manual and partially selected frames remain. Older frames without ownership information are retained for safety, so the first rearrangement of a legacy workflow may leave overlapping frames.
 - Missing models and unsupported settings produce specific errors. OOM does not silently reduce resolution or precision. Matching sampler names do not prove identical implementations.
 
 [Detailed sampler/scheduler tables (Japanese)](docs/TECHNICAL_REFERENCE_JA.md) · [Validation records](docs/VALIDATION.md) · [Implementation specification (Japanese)](docs/SPEC_JA.md) · [Changelog](CHANGELOG.md)

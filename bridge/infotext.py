@@ -105,7 +105,7 @@ def import_infotext(text, family='anima', policy='strict', tolerant=False):
                 path,convert=ALIASES[key];v=convert(value)
                 # A recorded zero sentinel means model default, not unknown.
                 original=v
-                if path in ('/sampling/sigma_min','/sampling/sigma_max','/sampling/rho') and v==0:v=None
+                if path in ('/sampling/sigma_min','/sampling/sigma_max','/sampling/rho','/sampling/shift') and v==0:v=None
                 set_value(path,v,f['key']);doc['requested'][path]=original
             elif key in ('size','seed resize from'):
                 m=re.fullmatch(r'(\d+)[x×](\d+)',value)

@@ -34,19 +34,31 @@ def _resources(model_chain, clip_chain):
         raise BridgeError('ASSET_BINDING_MISMATCH','Expected one model and one or two text encoders')
     assets = [_asset('model',roots_m[0]['category'],roots_m[0]['name'],'model')]
     assets += [_asset('text_encoder',x['category'],x['name'],f'text_encoder_{i}',x.get('component')) for i,x in enumerate(roots_c)]
-    model_loras = [x for x in model_chain if x['category'] == 'loras']
-    clip_loras = [x for x in clip_chain if x['category'] == 'loras']
-    if [x['name'] for x in model_loras if x['strength']] != [x['name'] for x in clip_loras if x['strength']]:
-        # A zero-strength branch is valid; compare the complete loader order below.
-        if [x['name'] for x in model_loras] != [x['name'] for x in clip_loras]:
-            raise BridgeError('ASSET_BINDING_MISMATCH','MODEL and CLIP use different LoRA order')
-    if [x['name'] for x in model_loras] != [x['name'] for x in clip_loras]:
-        raise BridgeError('ASSET_BINDING_MISMATCH','MODEL and CLIP use different LoRA loaders')
-    loras = []
-    for i,(m,c) in enumerate(zip(model_loras,clip_loras)):
+    model_loras = [x for x in model_chain if x['category'] == 'loras' and x['strength']]
+    clip_loras = [x for x in clip_chain if x['category'] == 'loras' and x['strength']]
+    # Pair actual shared loaders first; repeated uses of the same file remain separate.
+    by_node = {x['node_id']:i for i,x in enumerate(clip_loras) if 'node_id' in x}
+    pairs = {i:by_node[x['node_id']] for i,x in enumerate(model_loras) if x.get('node_id') in by_node}
+    used = set(pairs.values())
+    for i,m in enumerate(model_loras):
+        if i in pairs:continue
+        match = next((j for j,c in enumerate(clip_loras) if j not in used and c['name']==m['name']),None)
+        if match is not None:pairs[i]=match;used.add(match)
+    ordered = sorted(pairs.items())
+    if [j for _,j in ordered] != sorted(used):
+        raise BridgeError('ASSET_BINDING_MISMATCH','MODEL and CLIP use different LoRA order')
+    merged=[];mi=ci=0
+    for i,j in ordered+[(len(model_loras),len(clip_loras))]:
+        merged.extend((m['name'],m['strength'],0.) for m in model_loras[mi:i])
+        merged.extend((c['name'],0.,c['strength']) for c in clip_loras[ci:j])
+        if i<len(model_loras):
+            merged.append((model_loras[i]['name'],model_loras[i]['strength'],clip_loras[j]['strength']))
+        mi,ci=i+1,j+1
+    loras=[]
+    for i,(name,model_strength,clip_strength) in enumerate(merged):
         ident = f'lora_{i}'
-        assets.append(_asset('lora','loras',m['name'],ident))
-        loras.append({'asset_id':ident,'strength_model':m['strength'],'strength_text_encoder':c['strength'],'order':i})
+        assets.append(_asset('lora','loras',name,ident))
+        loras.append({'asset_id':ident,'strength_model':model_strength,'strength_text_encoder':clip_strength,'order':i})
     return assets,loras
 
 

@@ -84,8 +84,11 @@ for family,klass,cfgclass in [('anima',mb.Anima,supported.Anima),('sd15',mb.Base
         input_latent={'samples':torch.full(latent_shape(patcher,c),.1)} if mode=='img2img' else None
         latent,noise=generate_noise(spec,patcher,binding,input_latent)
         a,sigmas,facts,tensors=execute(spec,patcher,cond,noise,latent,binding,'tensors')
-        b,_,_,_=execute(spec,patcher,cond,noise,latent,binding,'summary')
+        b,_,summary,summary_tensors=execute(spec,patcher,cond,noise,latent,binding,'summary')
         assert torch.equal(a['samples'],b['samples'])
+        assert summary['calls']==[] and summary['steps']==[] and summary['post_adapter_conditions']=={}
+        assert summary_tensors=={} and summary['final_latent_hash']==facts['final_latent_hash']
+        assert summary['denoiser_calls']==facts['denoiser_calls']==len(facts['calls'])
         assert torch.isfinite(a['samples']).all()
         assert torch.equal(before,torch.random.get_rng_state())
         assert patcher.model_options==options and patcher.object_patches==objects
@@ -137,7 +140,7 @@ def fill_weights(model):
     with torch.no_grad():
         for name,p in model.named_parameters():
             if 'norm' in name and name.endswith('weight'):p.fill_(1)
-            elif name.endswith('bias'):p.zero_()
+            elif name.endswith('bias'):p.fill_(.01)
             else:p.copy_(torch.randn(p.shape,generator=generator)*.01)
     return model.eval()
 
@@ -162,6 +165,7 @@ for family in ('anima','sd15','sdxl'):
         out,extra,trace=encoder.encode('red (teapot:1.2), cup','cpu')
         again,_,_=encoder.encode('red (teapot:1.2), cup','cpu')
     assert torch.isfinite(out).all() and torch.equal(out,again)
+    assert all(torch.isfinite(value).all() for value in extra.values() if isinstance(value,torch.Tensor))
     assert torch.equal(before,torch.random.get_rng_state())
     if family=='sdxl':assert extra['pooled_output'].shape==(1,16)
     text_results.append({'family':family,'status':'PASS','shape':list(out.shape)})

@@ -126,14 +126,22 @@ export function arrangeLayout(graph,nodes,LiteGraph,app,{initial=false}={}) {
     if (!nodes.length) return;
     const origin=initial ? [100,130] : [Math.min(...nodes.map(n=>n.pos[0])),Math.min(...nodes.map(n=>n.pos[1]))];
     const plan=planLayout(nodes,linksOf(graph),origin);
-    // Persist group IDs on member nodes; standard LGraphGroup serializes its ID.
-    const previous=new Set(nodes.flatMap(n=>info(n)?.layout_groups || []));
-    const outside=graph._nodes?.filter(n=>!nodes.includes(n)) || [];
-    const protectedGroups=new Set(outside.flatMap(n=>info(n)?.layout_groups || []));
+    // Clipboard remaps numeric IDs. Match saved ownership to current spatial members.
+    const removable=(graph._groups || []).filter(group=>{
+        const owner=group.flags?.forge_neo_bridge;
+        if (owner?.version!==1 || !Array.isArray(owner.members) || !owner.members.length || !group.pos || !group.size) return false;
+        const members=(graph._nodes || []).filter(n=>{
+            const h=n.flags?.collapsed ? 30 : n.size[1]+30;
+            return n.pos[0]<group.pos[0]+group.size[0] && n.pos[0]+n.size[0]>group.pos[0] &&
+                n.pos[1]-30<group.pos[1]+group.size[1] && n.pos[1]-30+h>group.pos[1];
+        });
+        const tokens=new Set(members.map(n=>info(n)?.layout_member));
+        return members.length===owner.members.length && tokens.size===members.length &&
+            members.every(n=>nodes.includes(n)) && owner.members.every(token=>tokens.has(token));
+    });
     graph.beforeChange?.();
     try {
-        for (const group of [...(graph._groups || [])])
-            if (previous.has(group.id) && !protectedGroups.has(group.id)) graph.remove(group);
+        for (const group of removable) graph.remove(group);
         for (const [node,pos] of plan.positions) node.pos=pos;
         for (const [node,size] of plan.sizes) {
             if (node.setSize) node.setSize(size);
@@ -142,6 +150,12 @@ export function arrangeLayout(graph,nodes,LiteGraph,app,{initial=false}={}) {
         if (LiteGraph.LGraphGroup) for (const part of plan.groups) {
             const group=new LiteGraph.LGraphGroup(tr(app,...titles[part.stage]));
             group.color=colors[part.stage];group.font_size=20;
+            const members=part.nodes.map(n=>{
+                n.properties ??= {};n.properties.forge_neo_bridge ??= {};
+                return n.properties.forge_neo_bridge.layout_member=globalThis.crypto.randomUUID();
+            });
+            group.flags ??= {};
+            group.flags.forge_neo_bridge={version:1,members};
             group.pos=part.pos;group.size=part.size;graph.add(group);
             for (const n of part.nodes) {
                 n.properties ??= {};n.properties.forge_neo_bridge ??= {};

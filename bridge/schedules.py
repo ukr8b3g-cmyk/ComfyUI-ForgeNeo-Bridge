@@ -312,8 +312,9 @@ SAMPLER_OPTIONS = {
     'dpmpp_3m_sde': {'scheduler': 'exponential', 'discard_next_to_last_sigma': True, 'brownian_noise': True},
     # Core solver, Forge schedule. DDIM's timestep/Eta implementation is not ported.
     'ddim': {}, 'unipc': {'discard_next_to_last_sigma': True},
-    'euler_cfg_pp': {}, 'euler_ancestral_cfg_pp': {'uses_ensd': True},
-    'dpmpp_2m_cfg_pp': {'scheduler': 'karras'},
+    'euler_cfg_pp': {'requires_uncond_at_cfg1': True},
+    'euler_ancestral_cfg_pp': {'uses_ensd': True, 'requires_uncond_at_cfg1': True},
+    'dpmpp_2m_cfg_pp': {'scheduler': 'karras', 'requires_uncond_at_cfg1': True},
 }
 
 class Predictor:

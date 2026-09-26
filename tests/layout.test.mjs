@@ -76,10 +76,41 @@ test('target selection isolates imports and refuses ambiguous shared legacy work
  g.links.push({origin_id:1,target_id:99,type:'MODEL'});
  assert.throws(()=>selectLayoutNodes(g,[],g._nodes[4]),/select/);
 });
-test('saved frame identifiers support re-arrange and unrelated shared frame is retained',()=>{
+test('partially selected owned frame is retained',()=>{
  const g=fixture();arrangeLayout(g,g._nodes,lite,{});
  const before=g._groups[0];arrangeLayout(g,[g._nodes[0]],lite,{});
  assert(g._groups.includes(before));
+});
+test('clipboard ID remapping and saved ownership replace only copied frames',()=>{
+ const g=fixture();arrangeLayout(g,g._nodes,lite,{});
+ const originals=[...g._groups],originalNodes=[...g._nodes];
+ const copies=structuredClone(originalNodes),frames=structuredClone(originals);
+ for(const n of copies){n.id+=100;n.pos[0]+=6000;}
+ for(const f of frames){f.pos[0]+=6000;g.add(f);}
+ g._nodes.push(...copies);
+ g.links.push(...g.links.map(l=>({...l,origin_id:l.origin_id+100,target_id:l.target_id+100})));
+ const user={id:900,title:'User',pos:[5900,0],size:[10000,3000]};g._groups.push(user);
+ arrangeLayout(g,copies,lite,{});
+ assert.equal(g._groups.length,11);
+ for(const f of originals)assert(g._groups.includes(f));
+ for(const f of frames)assert(!g._groups.includes(f));
+ assert(g._groups.includes(user));
+ // Serialization preserves flags; IDs are not ownership evidence.
+ g._groups=JSON.parse(JSON.stringify(g._groups));
+ for(const f of g._groups)f.id+=1000;
+ g._nodes=JSON.parse(JSON.stringify(g._nodes));
+ arrangeLayout(g,g._nodes,lite,{});
+ assert.equal(g._groups.length,6);assert(g._groups.some(f=>f.title==='User'));
+});
+test('legacy stale IDs and unrelated members cannot delete a frame',()=>{
+ const g=fixture();
+ const manual={id:11,title:'User notes',pos:[5000,5000],size:[300,200]};g._groups.push(manual);
+ for(const n of g._nodes)n.properties.forge_neo_bridge.layout_groups=[11];
+ arrangeLayout(g,g._nodes,lite,{});assert(g._groups.includes(manual));
+ const owned=g._groups.find(f=>f.flags?.forge_neo_bridge);
+ const foreign={id:99,type:'Note',pos:[owned.pos[0]+40,owned.pos[1]+110],size:[100,100]};g._nodes.push(foreign);
+ arrangeLayout(g,g._nodes.filter(n=>n!==foreign),lite,{});
+ assert(g._groups.includes(owned));assert(g._groups.includes(manual));
 });
 test('menus follow Comfy locale',()=>{
  const g=fixture(),app={graph:g,ui:{settings:{getSettingValue:()=> 'ja'}}};

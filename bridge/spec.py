@@ -30,6 +30,20 @@ class BridgeError(ValueError):
         super().__init__(f"{code}: {message}" + (f" ({path})" if path else ""))
 
 
+def noise_seed_values(config):
+    n=config['noise'];batch=config['image']['batch_size'];variation=n['subseed_strength']!=0
+    for key in ('seed','subseed','ensd'):
+        if not 0 <= int(n[key]) <= MAX_SEED:
+            raise BridgeError('INVALID_SPEC','Seed must be within uint64','/noise/'+key)
+    seeds=tuple(int(n['seed'])+(0 if variation else i) for i in range(batch))
+    subseeds=tuple(int(n['subseed'])+i for i in range(batch))
+    ensd=int(n['ensd']) if config['sampling'].get('adjustments',True) else 0
+    for path,value in (('seed',seeds[-1]),('subseed',subseeds[-1] if variation else 0),('ensd',seeds[-1]+ensd)):
+        if value > MAX_SEED:
+            raise BridgeError('INVALID_SPEC',f'{path} plus active batch/ENSD offset exceeds uint64; reduce the seed or offset','/noise/'+path)
+    return seeds,subseeds,ensd
+
+
 def issue(code: str, path: str, message: str) -> dict:
     return {"code": code, "path": path, "message": message}
 
@@ -207,10 +221,7 @@ def finalize(document: dict, overrides: dict | None = None) -> 'GenerationSpec':
     for group in ('requested', 'provenance'):
         for path in doc[group]: pointer_get(cfg, path)
     n, s = cfg['noise'], cfg['sampling']
-    for key in ('seed', 'subseed', 'ensd'):
-        if int(n[key]) > MAX_SEED: raise BridgeError('INVALID_SPEC', 'Seed exceeds uint64', '/noise/' + key)
-    for value in (int(n['seed']) + int(n['ensd']) + cfg['image']['batch_size'] - 1, int(n['subseed']) + cfg['image']['batch_size'] - 1):
-        if value > MAX_SEED: raise BridgeError('INVALID_SPEC', 'Seed plus offset/batch overflows uint64')
+    noise_seed_values(cfg)
     for k in ('positive_raw', 'negative_raw'):
         if len(cfg['text'][k]) > 100000: raise BridgeError('IMPORT_LIMIT_EXCEEDED', 'Prompt exceeds 100,000 characters')
     ids = [a['asset_id'] for a in cfg['assets']]

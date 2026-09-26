@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import torch
 from .binding import check_latent, digest, latent_shape, tensor_hash, validate_model
 from .rng import ImageRNG, RNGConfig
-from .spec import BridgeError, canonical
+from .spec import BridgeError, canonical, noise_seed_values
 
 
 def model_identity(model):
@@ -13,16 +13,14 @@ def model_identity(model):
 
 
 def seeds_for(config):
-    n=config['noise'];batch=config['image']['batch_size']
-    return (tuple(int(n['seed'])+(i if n['subseed_strength']==0 else 0) for i in range(batch)),
-            tuple(int(n['subseed'])+i for i in range(batch)))
+    return noise_seed_values(config)[:2]
 
 
 def make_rng(config,shape,device):
-    n=config['noise'];seeds,subseeds=seeds_for(config)
+    n=config['noise'];seeds,subseeds,ensd=noise_seed_values(config)
     if n['source']=='GPU' and torch.device(device).type!='cuda':
         raise BridgeError('RNG_DEVICE_UNAVAILABLE','GPU RNG requires a CUDA device; no CPU fallback was substituted')
-    rng=ImageRNG(RNGConfig(n['source'],device,int(n['ensd'])),shape,seeds,subseeds,n['subseed_strength'],n['seed_resize_from']['height'],n['seed_resize_from']['width'])
+    rng=ImageRNG(RNGConfig(n['source'],device,ensd),shape,seeds,subseeds,n['subseed_strength'],n['seed_resize_from']['height'],n['seed_resize_from']['width'])
     return rng
 
 

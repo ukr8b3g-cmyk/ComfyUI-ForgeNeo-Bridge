@@ -59,7 +59,9 @@ def test_core_solver_uses_private_continued_noise_and_cannot_mutate_sigmas(monke
     assert torch.equal(output,torch.full_like(initial,6.))
 
 
-def test_cfgpp_gets_real_negative_prediction_even_when_cfg_is_one(monkeypatch):
+@pytest.mark.parametrize('sampler',['euler_cfg_pp','euler_ancestral_cfg_pp','dpmpp_2m_cfg_pp'])
+@pytest.mark.parametrize('mode',['cfg1','skip_early','ngms'])
+def test_cfgpp_gets_real_negative_prediction_even_when_cfg_is_one(monkeypatch,sampler,mode):
     install_core(monkeypatch,lambda:None)
     package=sys.modules['comfy'];core=package.samplers
     mm=NS(throw_exception_if_processing_interrupted=lambda:None)
@@ -70,7 +72,8 @@ def test_cfgpp_gets_real_negative_prediction_even_when_cfg_is_one(monkeypatch):
         assert conditions[1] is not None
         return torch.full_like(x,2.),torch.full_like(x,1.)
     core.calc_cond_batch=calc
-    cfg=default_document('sd15')['effective'];cfg['sampling'].update(sampler='euler_cfg_pp',cfg=1.)
+    cfg=default_document('sd15')['effective'];cfg['sampling'].update(sampler=sampler,cfg=1. if mode=='cfg1' else 7.)
+    cfg['guidance'].update(skip_early_cfg=.5 if mode=='skip_early' else 0,ngms=2. if mode=='ngms' else 0)
     guider=NS(model_patcher=object(),inner_model=object(),conds={'p':[{}],'n':[{}]})
     bundle=NS(positive=((1.,((4,'p'),)),),negative=((None,((4,'n'),)),))
     seen=[]
@@ -78,8 +81,9 @@ def test_cfgpp_gets_real_negative_prediction_even_when_cfg_is_one(monkeypatch):
         seen.append(args['uncond_denoised'])
         return args['denoised']
     denoiser=Denoiser(guider,None,cfg,bundle,{},4,None)
+    denoiser.call=1
     out=denoiser(x,torch.ones(1),model_options={
-        'disable_cfg1_optimization':True,'sampler_post_cfg_function':[capture]})
+        'sampler_post_cfg_function':[capture]})
     assert torch.equal(out,torch.full_like(x,2.))
     assert len(seen)==1 and torch.equal(seen[0],torch.ones_like(x))
     assert guider.conds=={'p':[{}],'n':[{}]}

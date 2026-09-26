@@ -109,7 +109,7 @@ class GraphReader:
             else: raise BridgeError('UNVERIFIED_PATCH_CHAIN', 'LoRA output role mismatch')
             chain = self.trace(self.input(node_id, key), role, seen)
             chain.append({'category': 'loras', 'name': safe_relative(self.literal(ins, 'lora_name')),
-                          'strength': float(self.literal(ins, strength)), 'component': role})
+                          'strength': float(self.literal(ins, strength)), 'component': role, 'node_id': node_id})
             return chain
         raise BridgeError('UNVERIFIED_PATCH_CHAIN', f'Unsupported loader/patch node: {kind}')
 

@@ -182,7 +182,7 @@ def encode_bundle(spec,clip,binding):
         return tuple(result)
     with mm.cuda_device_context(device) if hasattr(mm,'cuda_device_context') else contextlib.nullcontext():
         pos=expand(positive,False)
-        # Do not load unused negative conditions at CFG1. Both plans remain in the report.
-        neg=expand(negative,True) if cfg['sampling']['cfg']!=1 else ()
+        needs_negative = cfg['sampling']['cfg'] != 1 or SAMPLER_OPTIONS[cfg['sampling']['sampler']].get('requires_uncond_at_cfg1',False)
+        neg=expand(negative,True) if needs_negative else ()
     trace['schedule_calls']=calls
     return ConditioningBundle(spec.config_hash,cfg['family'],canonical(binding),clip_identity(clip),pos,neg,MappingProxyType(entries),canonical(trace))

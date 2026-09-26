@@ -72,7 +72,7 @@ def native_plan(doc, positive, inventory):
         raise BridgeError('NATIVE_SCHEDULER_UNSUPPORTED', f'{family}: {scheduler} is unavailable in the native recipe')
     if family == 'flux2_dev' and prompts['negative_raw'].strip():
         raise BridgeError('NATIVE_NEGATIVE_UNSUPPORTED', 'Flux.2 Dev blueprint has no negative conditioning input')
-    if family == 'qwen21' and '/sampling/shift' in doc['requested'] and abs(sampling['shift'] - 0.69) > 1e-6:
+    if family == 'qwen21' and sampling['shift'] is not None and '/sampling/shift' in doc['requested'] and abs(sampling['shift'] - 0.69) > 1e-6:
         raise BridgeError('NATIVE_SHIFT_UNSUPPORTED', 'Qwen-Image 2.1 recipe uses its built-in shift of 0.69')
     if family in ('flux2_klein', 'flux2_dev') and cfg['mode'] == 'img2img':
         raise BridgeError('NATIVE_MODE_UNSUPPORTED', 'Flux.2 image editing needs its own conditioning recipe')
@@ -124,7 +124,7 @@ def native_plan(doc, positive, inventory):
         model_slot, clip_slot = 0, 1
 
     if family in ('zimage', 'ernie'):
-        shift = sampling['shift'] if '/sampling/shift' in doc['requested'] else 3.0
+        shift = sampling['shift'] if '/sampling/shift' in doc['requested'] and sampling['shift'] is not None else 3.0
         # ERNIE consumes timesteps scaled by 1000; Z-Image consumes 0..1.
         patch = add('ModelSamplingSD3' if family == 'ernie' else 'ModelSamplingAuraFlow', {'shift':shift})
         connect(model, model_slot, patch, 'model');model, model_slot = patch, 0
@@ -140,7 +140,10 @@ def native_plan(doc, positive, inventory):
     connect(clip, clip_slot, pos, 'clip')
     if edit_conditioning:connect(vae, 0, pos, 'vae')
     if family != 'flux2_dev':
-        if not prompts['negative_raw'].strip() and sampling['cfg'] == 1.0:
+        if edit_conditioning:
+            neg = add(text_node, {text_key:prompts['negative_raw']})
+            connect(clip, clip_slot, neg, 'clip');connect(vae, 0, neg, 'vae')
+        elif not prompts['negative_raw'].strip() and sampling['cfg'] == 1.0:
             neg = add('ConditioningZeroOut')
             connect(pos, 0, neg, 'conditioning')
         else:
@@ -161,6 +164,7 @@ def native_plan(doc, positive, inventory):
         connect(source, 0, latent, 'pixels');connect(vae, 0, latent, 'vae')
         if edit_conditioning:
             connect(source, 0, pos, 'image1' if edit_plus else 'image')
+            connect(source, 0, neg, 'image1' if edit_plus else 'image')
     else:
         latent = add(latent_type, {'width':image['width'],'height':image['height'],
                                     'batch_size':image['batch_size']})

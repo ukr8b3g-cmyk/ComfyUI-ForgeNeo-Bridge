@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-27 — deep-audit fixes
+
+- Keep negative conditioning for the three CFG++ samplers at CFG 1, including empty negatives and transient CFG 1 controls. Align Qwen Edit positive/negative reference conditioning with ComfyUI's native Edit nodes.
+- Preserve independently applied and repeated LoRAs in imported Bridge graphs. Validate only active batch/variation/ENSD seed offsets before RNG creation.
+- Accept Forge's `Shift: 0` model-default sentinel for Z-Image and ERNIE imports while preserving the original request. Replace only arrangement frames whose saved ownership and current members match; retain manual, partial and unmarked legacy frames.
+- Make summary tracing lighter and repair the synthetic text smoke fixture. Update documentation and CPU/frontend regressions without changing the default-OFF Sampling adjustments setting.
+
 ## 2026-09-26 — image-to-workflow import and Hires.fix
 
 - Publish a Japanese-first / English-second illustrated README, original-resolution comparison images, cropped node guides and localized arrangement videos. Explain defaults, model-specific verification limits and the remaining Hires.fix output differences.
