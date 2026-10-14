@@ -1,0 +1,3 @@
+# Registry archive exclusions; keep runtime resources and license/provenance files.
+/.github/
+/tests/

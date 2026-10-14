@@ -40,6 +40,12 @@ git clone https://github.com/ukr8b3g-cmyk/ComfyUI-ForgeNeo-Bridge.git
 
 ComfyUI標準の依存関係を利用し、起動時のpip実行やモデルの自動ダウンロードは行いません。Larkは専用の名前空間で同梱しています。[ライセンス情報](THIRD_PARTY_NOTICES.md)も参照してください。
 
+### Comfy Registry向けメタデータ
+
+`pyproject.toml`にはPublisher ID `ukr8b3g-cmyk`を設定しています。このメタデータの整備だけではRegistryへの公開は行われません。公開前は上記のGitインストール手順を利用してください。
+
+追加のpip依存は宣言していません。PyTorch・NumPy・SciPy・Pillow・tqdm・torchsdeなどはComfyUI環境のものを利用し、同梱のLarkも別途インストール不要です。`.comfyignore`はCI設定とテストだけを配布から除外し、実行用ソース・翻訳・schema・Web拡張・ライセンス・同梱ソースの出典を保持します。
+
 ### 画像を読み込むとどうなる？
 
 1. Forge Neoの元画像をComfyUIのキャンバスへドロップします。
@@ -232,6 +238,12 @@ git clone https://github.com/ukr8b3g-cmyk/ComfyUI-ForgeNeo-Bridge.git
 To update, run `git pull --ff-only` inside this repository, then **restart ComfyUI and refresh the browser (F5)**. Re-drop the original image to rebuild an incomplete Hires workflow created by an older version.
 
 The extension uses ComfyUI's existing dependencies. It does not run pip on startup or automatically download models. Lark is bundled in a private namespace; see [third-party notices](THIRD_PARTY_NOTICES.md).
+
+### Comfy Registry metadata
+
+`pyproject.toml` specifies publisher ID `ukr8b3g-cmyk`. Preparing this metadata does not publish the extension to the Registry. Until publication, use the Git installation instructions above.
+
+No additional pip dependencies are declared. PyTorch, NumPy, SciPy, Pillow, tqdm and torchsde are supplied by the ComfyUI environment; the bundled Lark needs no separate installation. `.comfyignore` excludes only CI configuration and tests from the distribution, retaining runtime sources, translations, schema, web extensions, licenses and vendored-source provenance.
 
 ### Import behavior
 
