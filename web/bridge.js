@@ -179,25 +179,25 @@ async function editor(initial = null, sourceFile = null) {
 let dropEnabled = false;
 function updateDrop(enabled) {
     dropEnabled = enabled === true;
-    if (dropEnabled && !installedHandler) {
+    if (dropEnabled && app.handleFile !== installedHandler) {
         previousHandler = app.handleFile;
         const original = previousHandler;
         const importer = makeDropHandler(original, file => request('/reconstruct', file, true),
             (result,file,context) => placeReconstructed(result,app,globalThis.LiteGraph,context,()=>dropSerial),
             app, () => captureCanvas(app,++dropSerial));
-        installedHandler = async function(file, ...args) {
-            if (!dropEnabled) return original.call(app, file, ...args);
+        const handler = async function(file, ...args) {
+            if (!dropEnabled || installedHandler !== handler) return original.call(app, file, ...args);
             try { return await importer(file, ...args); }
             catch (error) { outputError(error); }
         };
-        app.handleFile = installedHandler;
+        installedHandler = handler;
+        app.handleFile = handler;
     } else if (!dropEnabled && installedHandler && app.handleFile === installedHandler) {
         app.handleFile = previousHandler;
         installedHandler = null;
         previousHandler = null;
     }
-    // If another extension wraps us, retain our disabled delegate. Do not break
-    // its chain or install a second wrapper when this feature is enabled again.
+    // Older Bridge wrappers delegate so later importers remain in the chain.
 }
 
 app.registerExtension({
@@ -209,7 +209,11 @@ app.registerExtension({
         }
     },
     settings:[{id:SETTING,name:tr(app,'ForgeNeo Bridge: 画像からワークフローを作成','ForgeNeo Bridge: canvas image to workflow'),type:'boolean',defaultValue:true,onChange:updateDrop}],
-    setup(){updateDrop(app.extensionManager?.setting?.get?.(SETTING)??app.ui?.settings?.getSettingValue?.(SETTING)??true);},
+    setup(){
+        updateDrop(app.extensionManager?.setting?.get?.(SETTING)??app.ui?.settings?.getSettingValue?.(SETTING)??true);
+        // Custom Scripts installs its JPEG importer asynchronously after setup.
+        document.addEventListener('drop',()=>{if(dropEnabled)updateDrop(true);},true);
+    },
     nodeCreated(node) {
         const assetInputs = {'CheckpointLoaderSimple':'ckpt_name','UNETLoader':'unet_name',
             'CLIPLoader':'clip_name','VAELoader':'vae_name','LoraLoader':'lora_name','LoraLoaderModelOnly':'lora_name'};

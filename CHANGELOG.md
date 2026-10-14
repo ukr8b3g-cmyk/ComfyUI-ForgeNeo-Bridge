@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1 — 2026-10-14
+
+- Fix JPEG canvas drops when Custom Scripts or another extension installs its image importer after Bridge setup. Preserve native Comfy workflow delegation and the disabled setting without duplicate Bridge processing.
+- Verify actual pointer drops in ComfyUI_test: Forge JPEG reconstructs 10 Bridge workflow nodes; Krea2 WebP restores all 17 node positions/sizes, 19 links, groups and saved widget values. All 56 JavaScript tests pass. This import fix does not add GPU-generation or image-parity validation.
+
 ## 2026-09-27 — deep-audit fixes
 
 - Keep negative conditioning for the three CFG++ samplers at CFG 1, including empty negatives and transient CFG 1 controls. Align Qwen Edit positive/negative reference conditioning with ComfyUI's native Edit nodes.

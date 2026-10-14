@@ -132,6 +132,7 @@ test('registered frontend handles a Forge image without opening a dialog',async(
         schema_version:'1.0.0',name:'Forge',nodes:[{id:'1',type:'ForgeNeoBridgeSettings',values:{}}],edges:[]}})})};
     globalThis.LiteGraph=lite;
     globalThis.window={alert:value=>alerts.push(value)};
+    globalThis.document={addEventListener(){}};
     const source=await readFile(new URL('../web/bridge.js',import.meta.url),'utf8');
     const appUrl='data:text/javascript,export const app=globalThis.__forgeApp';
     const apiUrl='data:text/javascript,export const api=globalThis.__forgeApi';
@@ -150,5 +151,5 @@ test('registered frontend handles a Forge image without opening a dialog',async(
     assert.equal(loaded.length,1);
     assert.equal(loaded[0].nodes[0].type,'ForgeNeoBridgeSettings');
     assert.deepEqual(alerts,[]);
-    delete globalThis.__forgeApp;delete globalThis.__forgeApi;delete globalThis.window;
+    delete globalThis.__forgeApp;delete globalThis.__forgeApi;delete globalThis.window;delete globalThis.document;
 });

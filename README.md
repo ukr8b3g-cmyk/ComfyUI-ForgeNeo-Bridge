@@ -195,7 +195,7 @@ Sampler下のプレビュー用余白と、保存画像を大きく表示する�
 
 [サンプラー／Scheduler対応表と詳しい設定](docs/TECHNICAL_REFERENCE_JA.md) · [検証記録](docs/VALIDATION.md) · [実装仕様](docs/SPEC_JA.md) · [変更履歴](CHANGELOG.md)
 
-実装系列：1.0.0。互換処理の基準は[Forge Neo 710f1e25](https://github.com/Haoming02/sd-webui-forge-classic/commit/710f1e25fcac84d880cbccf27d11b2e3276e589e)。AGPL-3.0：[LICENSE](LICENSE)／[同梱ソースの表記](THIRD_PARTY_NOTICES.md)。
+実装系列：1.0.1。互換処理の基準は[Forge Neo 710f1e25](https://github.com/Haoming02/sd-webui-forge-classic/commit/710f1e25fcac84d880cbccf27d11b2e3276e589e)。AGPL-3.0：[LICENSE](LICENSE)／[同梱ソースの表記](THIRD_PARTY_NOTICES.md)。
 
 ---
 
@@ -394,4 +394,4 @@ These approximately 23-second videos use user-provided screenshots, localized fe
 
 [Detailed sampler/scheduler tables (Japanese)](docs/TECHNICAL_REFERENCE_JA.md) · [Validation records](docs/VALIDATION.md) · [Implementation specification (Japanese)](docs/SPEC_JA.md) · [Changelog](CHANGELOG.md)
 
-Implementation series: 1.0.0. Compatibility reference: [Forge Neo 710f1e25](https://github.com/Haoming02/sd-webui-forge-classic/commit/710f1e25fcac84d880cbccf27d11b2e3276e589e). License: AGPL-3.0; see [LICENSE](LICENSE) and [third-party notices](THIRD_PARTY_NOTICES.md).
+Implementation series: 1.0.1. Compatibility reference: [Forge Neo 710f1e25](https://github.com/Haoming02/sd-webui-forge-classic/commit/710f1e25fcac84d880cbccf27d11b2e3276e589e). License: AGPL-3.0; see [LICENSE](LICENSE) and [third-party notices](THIRD_PARTY_NOTICES.md).
