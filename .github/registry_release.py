@@ -44,7 +44,7 @@ def get_json(url, token=None, absent=False):
 
 
 def stable_version(tag):
-    require(isinstance(tag, str) and re.fullmatch(r"v?\d+\.\d+\.\d+", tag),
+    require(isinstance(tag, str) and re.fullmatch(r"v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)", tag),
             "Use an explicit stable release tag, e.g. v1.2.3")
     return tag.removeprefix("v")
 
@@ -105,8 +105,19 @@ def registry_preflight(policy, version):
     if existing is not None:
         require(node is not None and existing["node_id"] == policy["node"] and existing["version"] == version,
                 "Inconsistent existing Registry version")
-        print("Version already exists; publication skipped. Status: " + existing["status"])
-        return False
+        status = existing.get("status", "unknown")
+        if not isinstance(status, str) or not re.fullmatch(r"[A-Za-z0-9_]+", status):
+            status = "unknown"
+        message = "Registry " + version + " already exists (" + status + "). No publication attempted."
+        if status == "NodeVersionStatusPending":
+            print("::warning::" + message + " Await Registry review.")
+        else:
+            print("::error::" + message)
+        summary = os.environ.get("GITHUB_STEP_SUMMARY")
+        if summary:
+            with open(summary, "a", encoding="utf-8") as report:
+                report.write(message + "\n\nExisting package equality has not been verified. Inspect the existing version; do not republish.\n")
+        raise ValueError("Existing Registry version requires inspection; no republish: " + status)
     print("Target version absent; initial or subsequent publication may proceed.")
     return True
 
@@ -188,6 +199,12 @@ def verify_public(policy, version, expected):
     audit_archive(io.BytesIO(payload), expected)
     print(json.dumps({"version": version, "status": record["status"], "download_url": url,
                       "zip_sha256": hashlib.sha256(payload).hexdigest()}))
+    if record["status"] == "NodeVersionStatusPending":
+        print("::warning::Upload and package verification completed; Registry review is pending, not active distribution.")
+        summary = os.environ.get("GITHUB_STEP_SUMMARY")
+        if summary:
+            with open(summary, "a", encoding="utf-8") as report:
+                report.write("Upload and public ZIP verified. Registry status: Pending. Await review; do not republish.\n")
     require(record["status"] in ("NodeVersionStatusPending", "NodeVersionStatusActive"),
             "Registry version needs review: " + record["status"] + "; do not republish")
 
