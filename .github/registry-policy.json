@@ -1,0 +1,12 @@
+{
+  "node": "comfyui-forgeneo-bridge",
+  "publisher": "ukr8b3g-cmyk",
+  "repository": "https://github.com/ukr8b3g-cmyk/ComfyUI-ForgeNeo-Bridge",
+  "includes": [],
+  "license": {
+    "file": "LICENSE"
+  },
+  "required_workflows": [
+    "Bridge validation"
+  ]
+}
