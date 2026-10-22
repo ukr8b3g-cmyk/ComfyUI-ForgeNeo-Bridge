@@ -4,7 +4,7 @@ import asyncio
 import copy
 import hashlib
 from .spec import BridgeError, PROFILE, SAMPLERS, SCHEDULERS, canonical, default_document, finalize, parse_json, schema
-from .metadata import MAX_IMAGE, read_metadata, image_dimensions
+from .metadata import MAX_IMAGE, read_metadata, inspect_drop, image_dimensions
 from .infotext import import_infotext
 from .binding import category_path, file_identity
 from .workflow import graph_plan
@@ -72,7 +72,7 @@ def register_routes(routes):
     @guarded
     async def reconstruct_image(request):
         data=await image_bytes(request)
-        result=await asyncio.to_thread(read_metadata,data)
+        result=await asyncio.to_thread(inspect_drop,data)
         if result['kind']!='forge':return {'kind':result['kind']}
         inventory=await asyncio.to_thread(catalog)
         size=await asyncio.to_thread(image_dimensions,data)

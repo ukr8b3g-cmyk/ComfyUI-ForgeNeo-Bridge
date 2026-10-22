@@ -147,6 +147,7 @@ test('registered frontend handles a Forge image without opening a dialog',async(
     await import('data:text/javascript,'+encodeURIComponent(script));
     assert.equal(app.extension.settings[0].id,'ForgeNeo.Bridge.enable_canvas_drop');
     assert.equal(app.extension.settings[0].defaultValue,true);
+    assert.equal(app.extension.settings[0].category[0],'ForgeNeo Bridge');
     await app.handleFile(new File(['x'],'forge.png'));
     assert.equal(loaded.length,1);
     assert.equal(loaded[0].nodes[0].type,'ForgeNeoBridgeSettings');

@@ -42,7 +42,7 @@ ComfyUI標準の依存関係を利用し、起動時のpip実行やモデルの�
 
 ### Comfy Registry向けメタデータ
 
-`pyproject.toml`にはPublisher ID `ukr8b3g-cmyk`を設定しています。このメタデータの整備だけではRegistryへの公開は行われません。公開前は上記のGitインストール手順を利用してください。
+Publisher IDは`ukr8b3g-cmyk`です。正式なGitHub Releaseの公開後、検証済みタグのソースをComfy Registryへ送信する自動処理を実行します。Managerで更新が見つからない場合は、上記のGitインストール・更新手順を利用してください。
 
 追加のpip依存は宣言していません。PyTorch・NumPy・SciPy・Pillow・tqdm・torchsdeなどはComfyUI環境のものを利用し、同梱のLarkも別途インストール不要です。`.comfyignore`はCI設定とテストだけを配布から除外し、実行用ソース・翻訳・schema・Web拡張・ライセンス・同梱ソースの出典を保持します。
 
@@ -57,6 +57,8 @@ ComfyUI標準の依存関係を利用し、起動時のpip実行やモデルの�
 
 ### モデル別の自動配線と検証範囲
 
+設定欄の分類名は **ForgeNeo Bridge** です。ComfyUIの`workflow`／`prompt`を持つ画像は、Forge風の生成情報も入っていてもComfyUI標準の読込へ渡します。自動変換は明示的な`Version: neo-…`を持つ画像が対象です。判別できない画像は標準読込へ渡し、旧画像のForge生成情報はBridgeの手動インポートで確認できます。生成情報だけがコピーされ、出所の情報がすべて失われた画像の作成元は判別できません。
+
 「ワークフローを組み立てられること」と「Forge画像に近い結果を出せること」は別です。
 
 | 系統 | 作成するワークフロー | 確認状況・注意点 |
@@ -66,6 +68,7 @@ ComfyUI標準の依存関係を利用し、起動時のpip実行やモデルの�
 | Anima | 個別のモデル／TE／VAE Loader＋Bridge経路 | `waiANIMA_v10Base10`のLanczos Hiresを補正OFF／ONでGPU完走、ユーザー動作確認済み |
 | Z-Image（ZIT） | モデル別の標準ノードを自動配線 | ローカルの互換構成でGPU生成・出力確認済み。元の重みとの完全一致は未検証 |
 | ERNIE | モデル別の標準ノードを自動配線 | 互換量子化モデルでGPU生成・出力確認済み。元の重みとの完全一致は未検証 |
+| MOSS-Image Base / SFT | MOSS用CLIP Loader＋FLUX.2 latent＋標準サンプリング経路 | SFT＋8ステップLoRA、880×1184でGPU生成確認。構図・衣装に差あり。BaseはGPU未検証、Hiresは未対応 |
 | Qwen-Image / Edit 2511・2509・初代 | 通常生成と参照画像編集を区別して標準ノードを配線 | 2511 int8＋Lightning LoRAの参照なし生成はGPU完走。2509・初代・参照画像編集はGPU未検証 |
 | Qwen-Image 2.1 / Krea2 | モデル別の標準ノードを自動配線 | レシピ実装あり。今回のGPU検証対象外。Qwen 2.1の参照画像編集は未対応 |
 | Flux.1 Dev / Schnell | DualCLIPLoaderなどの標準ノードを配線 | モデル未所持。仕様・配線テストのみ、GPU未検証 |
@@ -241,7 +244,7 @@ The extension uses ComfyUI's existing dependencies. It does not run pip on start
 
 ### Comfy Registry metadata
 
-`pyproject.toml` specifies publisher ID `ukr8b3g-cmyk`. Preparing this metadata does not publish the extension to the Registry. Until publication, use the Git installation instructions above.
+The publisher ID is `ukr8b3g-cmyk`. Publishing a formal GitHub Release runs the guarded Comfy Registry publisher against the validated tag source. If Manager does not show the update yet, use the Git installation/update instructions above.
 
 No additional pip dependencies are declared. PyTorch, NumPy, SciPy, Pillow, tqdm and torchsde are supplied by the ComfyUI environment; the bundled Lark needs no separate installation. `.comfyignore` excludes only CI configuration and tests from the distribution, retaining runtime sources, translations, schema, web extensions, licenses and vendored-source provenance.
 
@@ -256,6 +259,8 @@ No additional pip dependencies are declared. PyTorch, NumPy, SciPy, Pillow, tqdm
 
 ### Model recipes and verification
 
+The settings category is **ForgeNeo Bridge**. Images containing a ComfyUI `workflow` or `prompt` are passed to ComfyUI's original importer even when Forge-style parameters are also present. Automatic conversion requires an explicit `Version: neo-…`. Ambiguous images use the original importer; legacy Forge parameters can still be inspected through manual Bridge import. The origin cannot be inferred when only copied generation parameters survive.
+
 Workflow reconstruction and image similarity are separate capabilities.
 
 | Family | Generated workflow | Verification and limitations |
@@ -265,6 +270,7 @@ Workflow reconstruction and image similarity are separate capabilities.
 | Anima | Separate model/TE/VAE loaders + Bridge path | `waiANIMA_v10Base10` Lanczos Hires completed with adjustments OFF and ON; user confirmed operation |
 | Z-Image (ZIT) | Model-specific standard ComfyUI nodes | GPU generation and visual output checked with a compatible local configuration; exact original-weight parity unverified |
 | ERNIE | Model-specific standard ComfyUI nodes | GPU generation and visual output checked with a compatible quantized model; original-weight parity unverified |
+| MOSS-Image Base / SFT | MOSS CLIP loader, FLUX.2 latent and native sampling | SFT + 8-step LoRA completed on GPU at 880×1184; composition/clothing differ. Base is GPU-unverified; Hires is unsupported |
 | Qwen-Image / Edit 2511, 2509 and original Edit | Standard nodes selected for text-only or reference-image generation | 2511 int8 + Lightning LoRA completed without references; 2509, original Edit and reference-editing paths are GPU-unverified |
 | Qwen-Image 2.1 / Krea2 | Model-specific standard ComfyUI nodes | Recipes implemented; outside the current GPU checks. Qwen 2.1 reference-image editing is unsupported |
 | Flux.1 Dev / Schnell | DualCLIPLoader and other standard nodes | Models unavailable locally; specification/wiring checks only, GPU-unverified |

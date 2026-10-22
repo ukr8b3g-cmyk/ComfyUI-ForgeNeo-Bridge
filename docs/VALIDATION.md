@@ -182,3 +182,14 @@ precision, resolution or step changes are made.
 
 These properties have CPU/import/replay/exception tests. H3/LTX end-to-end
 non-interference still requires the separate formal GPU gate in the specification.
+## Local MOSS and image-drop validation — 2026-10-22
+
+- The user confirmed local operation before requesting commit, push and Release publication for v1.1.0.
+
+- Base source: installed ComfyUI_test Bridge `a6b6c06`; existing development checkout was not used as the deployment source. Snapshot: 149 source files, SHA-256 checked before editing.
+- MOSS native recipes preserve explicit model/encoder/VAE/LoRA, seed, dimensions, steps, CFG, sampler/scheduler, Shift, SLG and discard-penultimate settings. Missing assets retain source names. The native MOSS timestep multiplier remains 1; ModelSamplingSD3 is not inserted.
+- Real source WebP, model header and live ComfyUI 0.42.1 node contracts: 15 nodes / 17 edges, all assets resolved and socket/widget contracts accepted.
+- Focused Python metadata/reconstruction regressions: 97 passed. Frontend suites: 56 passed. Tests use existing local developer tooling; no packages were installed.
+- Real frontend in an isolated Chromium context, serving candidate Bridge JS and a mocked MOSS reconstruction response: graph built, native Comfy WebP nodes/positions/links retained, `ForgeNeo Bridge` settings category rendered, no page errors. HTTP writes unrelated to reconstruction were blocked; the user's canvas/settings were not changed. This does not prove a reloaded live Python reconstruct endpoint.
+- GPU: candidate-generated API graph queued on the existing ComfyUI_test server; prompt `978fddcb-c1ce-4ef1-b0ce-178285b14b01`. SFT BF16, Qwen3.5 INT8 encoder, full-encoder/small-decoder VAE, `lora_latest` at 1, 8 ER SDE / simple steps, CFG 1, Shift 5, seed 3178412173, SLG layer 22 / 0–0.5, discard penultimate ON. Success in 14.05 s; only loader nodes 1/2/3 cached, sampler actually executed. Output `ForgeNeo-Bridge/moss-local-20261022_00001_.png`, 880×1184. Same subject/theme, different pose and clothing; no pixel-parity claim. Base remains GPU-unverified; MOSS Hires reconstruction is unsupported.
+- Automatic import now delegates native Comfy metadata and ambiguous/unreadable metadata; only explicit Neo-version parameters take the reconstruction path. Manual metadata inspection remains broader. Copied Neo parameters without any surviving origin marker cannot be distinguished from a Neo original.

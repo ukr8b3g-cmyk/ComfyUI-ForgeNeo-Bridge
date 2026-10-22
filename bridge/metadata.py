@@ -1,6 +1,7 @@
 """Bounded PNG/JPEG/WebP metadata reader. Does not decode image pixels."""
 from __future__ import annotations
 import struct
+import re
 import zlib
 from .spec import BridgeError, MAX_METADATA
 
@@ -95,7 +96,10 @@ def _tiff(data: bytes, out: Collector):
                     value = _text(raw)
                 out.tagged(value)
             elif typ == 2:
-                out.tagged(_text(raw))
+                value = _text(raw)
+                if tag in (0x0131, 0x010f) and value.casefold().startswith('comfyui'):
+                    out.add('software' if tag == 0x0131 else 'make', value)
+                out.tagged(value)
         if follow_next: walk(read(offset+2+12*count, 'I'), depth+1)
     walk(read(4,'I'),0)
 
@@ -164,6 +168,26 @@ def read_metadata(data: bytes) -> dict:
             pos+=n
     else:
         raise BridgeError('NOT_SUPPORTED_IMAGE','Expected a PNG, JPEG or WebP image file')
-    if 'workflow' in out.values or 'prompt' in out.values:
+    if any(key in out.values for key in ('workflow', 'prompt')) or any(
+            'comfyui' in out.values.get(key, '').casefold() for key in ('software', 'make')):
         return {'kind':'native','metadata':out.values}
     return {'kind':'forge' if '\nSteps:' in out.values.get('parameters','') else 'unknown','metadata':out.values}
+
+
+def inspect_drop(data: bytes) -> dict:
+    """Only take over a drop when Neo metadata is explicit; manual import is broader."""
+    try:
+        result = read_metadata(data)
+    except BridgeError as exc:
+        if exc.code in ('INVALID_METADATA', 'NOT_SUPPORTED_IMAGE'):
+            return {'kind':'unknown'}
+        raise
+    if result['kind'] == 'forge':
+        from .infotext import split_fields
+        text = result['metadata']['parameters']
+        try:fields = split_fields(text[text.rfind('\nSteps:') + 1:])
+        except BridgeError:return {'kind':'unknown'}
+        versions = [f['value'] for f in fields if f['key'].casefold() == 'version']
+        if not versions or not all(re.match(r'^neo(?:[-\s]|$)', value, re.I) for value in versions):
+            return {'kind':'unknown'}
+    return result

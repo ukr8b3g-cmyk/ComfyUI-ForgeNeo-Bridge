@@ -208,7 +208,7 @@ app.registerExtension({
             catch (error) { console.warn(error); }
         }
     },
-    settings:[{id:SETTING,name:tr(app,'ForgeNeo Bridge: 画像からワークフローを作成','ForgeNeo Bridge: canvas image to workflow'),type:'boolean',defaultValue:true,onChange:updateDrop}],
+    settings:[{id:SETTING,name:tr(app,'ForgeNeo Bridge: 画像からワークフローを作成','ForgeNeo Bridge: canvas image to workflow'),category:['ForgeNeo Bridge',tr(app,'画像からワークフローを作成','Canvas image to workflow')],type:'boolean',defaultValue:true,onChange:updateDrop}],
     setup(){
         updateDrop(app.extensionManager?.setting?.get?.(SETTING)??app.ui?.settings?.getSettingValue?.(SETTING)??true);
         // Custom Scripts installs its JPEG importer asynchronously after setup.

@@ -5,6 +5,10 @@ workflows, not a claim that ComfyUI and Forge Neo produce identical pixels.
 """
 from __future__ import annotations
 
+import math
+import re
+
+from .infotext import parse_bool
 from .spec import BridgeError
 
 
@@ -16,12 +20,35 @@ CORE_SAMPLERS = frozenset((
 ))
 CORE_SCHEDULERS = frozenset(('simple', 'sgm_uniform', 'karras', 'exponential',
                              'ddim_uniform', 'beta', 'normal', 'linear_quadratic', 'kl_optimal'))
+MOSS_SLG_FIELDS = frozenset(('skip layer guidance', 'slg single layers',
+                           'slg start percent', 'slg end percent'))
+
+
+def moss_slg(fields):
+    values = {}
+    for field in fields:
+        key, value = field['key'].casefold(), field['value']
+        if key not in MOSS_SLG_FIELDS:continue
+        if key in values and values[key] != value:
+            raise BridgeError('INVALID_METADATA', f'Conflicting {field["key"]}')
+        values[key] = value
+    try:
+        enabled = parse_bool(values.get('skip layer guidance', 'True' if values else 'False'))
+        start = float(values.get('slg start percent', '0'))
+        end = float(values.get('slg end percent', '0.5'))
+        if not math.isfinite(start) or not math.isfinite(end):raise ValueError('Non-finite SLG interval')
+    except ValueError as exc:
+        raise BridgeError('INVALID_METADATA', 'Invalid MOSS SLG settings') from exc
+    layers = ', '.join(re.findall(r'\d+', values.get('slg single layers', '22')))
+    return {'enabled':enabled, 'single_layers':layers,
+            'start_percent':max(0., min(start, 1.)), 'end_percent':max(0., min(end, 1.))}
 
 
 def defaults(family, model_name):
     name = model_name.casefold()
     turbo = 'turbo' in name or 'schnell' in name
     base = 'base' in name
+    if family == 'moss':return 50, 3.0, 'euler'
     if family == 'ernie':return (8, 1.0, 'euler') if turbo else (20, 4.0, 'euler')
     if family == 'zimage':return (8, 1.0, 'res_multistep') if turbo else (25, 4.0, 'euler')
     if family == 'krea2':return 8, 1.0, 'euler'
@@ -37,7 +64,7 @@ def apply_defaults(cfg, requested, family, model_name):
     for path, value in (('/noise/seed', '0'), ('/image/width', 1024),
                         ('/image/height', 1024), ('/sampling/steps', steps),
                         ('/sampling/cfg', guidance), ('/sampling/sampler', sampler),
-                        ('/sampling/scheduler', 'simple')):
+                        ('/sampling/scheduler', 'sgm_uniform' if family == 'moss' else 'simple')):
         if path not in requested:
             group, field = path.strip('/').split('/')
             cfg[group][field] = value
@@ -100,7 +127,7 @@ def native_plan(doc, positive, inventory):
                                       'type':'flux', 'device':'default'}, encoder)
     else:
         clip_type = {'ernie':'flux2', 'zimage':'lumina2', 'qwen':'qwen_image',
-                     'qwen21':'qwen_image', 'krea2':'krea2',
+                     'qwen21':'qwen_image', 'krea2':'krea2', 'moss':'moss_image',
                      'flux2_klein':'flux2', 'flux2_dev':'flux2'}[family]
         clip = add('CLIPLoader', {'clip_name':encoder['name'], 'type':clip_type,
                                   'device':'default'}, encoder)
@@ -128,6 +155,16 @@ def native_plan(doc, positive, inventory):
         # ERNIE consumes timesteps scaled by 1000; Z-Image consumes 0..1.
         patch = add('ModelSamplingSD3' if family == 'ernie' else 'ModelSamplingAuraFlow', {'shift':shift})
         connect(model, model_slot, patch, 'model');model, model_slot = patch, 0
+    if family == 'moss':
+        shift = sampling['shift']
+        if '/sampling/shift' in doc['requested'] and shift is not None and shift != 5.0:
+            patch = add('ModelSamplingAuraFlow', {'shift':shift})
+            connect(model, model_slot, patch, 'model');model, model_slot = patch, 0
+        slg = binding['slg']
+        if slg['enabled'] and slg['single_layers']:
+            patch = add('SkipLayerGuidanceDiTSimple', {key:slg[key] for key in (
+                'single_layers', 'start_percent', 'end_percent')} | {'double_layers':''})
+            connect(model, model_slot, patch, 'model');model, model_slot = patch, 0
     if edit_conditioning:
         patch = add('CFGNorm', {'strength':1.0})
         connect(model, model_slot, patch, 'model');model, model_slot = patch, 0
@@ -143,7 +180,7 @@ def native_plan(doc, positive, inventory):
         if edit_conditioning:
             neg = add(text_node, {text_key:prompts['negative_raw']})
             connect(clip, clip_slot, neg, 'clip');connect(vae, 0, neg, 'vae')
-        elif not prompts['negative_raw'].strip() and sampling['cfg'] == 1.0:
+        elif family != 'moss' and not prompts['negative_raw'].strip() and sampling['cfg'] == 1.0:
             neg = add('ConditioningZeroOut')
             connect(pos, 0, neg, 'conditioning')
         else:
@@ -156,7 +193,7 @@ def native_plan(doc, positive, inventory):
         negative_guidance = add('FluxGuidance', {'guidance':binding['distilled_cfg']})
         connect(neg, 0, negative_guidance, 'conditioning');neg = negative_guidance
 
-    latent_type = ('EmptyFlux2LatentImage' if family in ('ernie','flux2_klein','flux2_dev')
+    latent_type = ('EmptyFlux2LatentImage' if family in ('ernie','flux2_klein','flux2_dev','moss')
                    else 'EmptyLatentImage' if family in ('krea2','qwen21') else 'EmptySD3LatentImage')
     if cfg['mode'] == 'img2img':
         source = add('LoadImage', {'image':''})

@@ -9,12 +9,13 @@ from .infotext import import_infotext, parse_loras
 from .spec import BridgeError, canonical, finalize
 
 NATIVE_FAMILIES = frozenset(('ernie', 'zimage', 'qwen', 'qwen21', 'krea2',
-                             'flux1', 'flux2_klein', 'flux2_dev'))
+                             'flux1', 'flux2_klein', 'flux2_dev', 'moss'))
 UNSUPPORTED_FAMILIES = frozenset(('flux2', 'lumina2', 'pid', 'wan'))
 
 
 def _family_label(value):
     label = re.sub(r'[^a-z0-9]+', '', str(value).casefold())
+    if label == 'moss' or label.startswith('mossimage'):return 'moss'
     if 'ernie' in label:return 'ernie'
     if 'zimage' in label or label.startswith('zit'):return 'zimage'
     if 'qwenimage21' in label:return 'qwen21'
@@ -81,6 +82,8 @@ def probe_family(category, name):
         header = json.loads(raw)
         keys = tuple(header)
         def has(suffix):return any(key.endswith(suffix) for key in keys)
+        if has('shared_block_modulation.weight') and has('layers.0.proj.ffn_up_gate.weight'):
+            return 'moss'
         if has('layers.0.mlp.linear_fc2.weight') and has('adaLN_modulation.1.weight'):
             return 'ernie'
         if has('txtfusion.projector.weight') and has('first.weight'):
@@ -127,6 +130,7 @@ def infer_family(fields, assets):
 def _default_module(family, role, model_name, inventory):
     klein_9b = '9b' in model_name.casefold()
     defaults = {
+        'moss':('qwen3.5_9b_int8_convrot', 'flux2-vae'),
         'ernie':('ministral-3-3b', 'flux2-vae'),
         'zimage':('qwen_3_4b', 'ae'),
         'qwen':('qwen_2.5_vl_7b_fp8_scaled', 'qwen_image_vae'),
@@ -214,7 +218,8 @@ def reconstruct(text, inventory, probe=probe_family, *, image_size=None):
         if not item['key'].casefold().startswith('module '):continue
         candidate = resolve_asset(item['name'], ('text_encoders', 'vae'), inventory)
         label = _name(item['name']).casefold()
-        if candidate['category'] == 'vae' or (candidate['category'] is None and 'vae' in label):
+        if candidate['category'] == 'vae' or (candidate['category'] is None and (
+                'vae' in label or (family == 'moss' and label.startswith('full_encoder_small_decoder')))):
             if vae is None:vae = candidate;vae['category'] = 'vae'
             elif _name(vae['raw_name']).casefold() != _name(item['name']).casefold():unassigned_modules.append(item)
         elif candidate['category'] == 'text_encoders' or (candidate['category'] is None and any(x in label for x in (
@@ -308,6 +313,15 @@ def reconstruct(text, inventory, probe=probe_family, *, image_size=None):
                              if item['code'] not in ('ASSET_BINDING_REQUIRED','INFERRED_SETTING')]
         binding = doc['extensions']['reconstruction']
         binding['notes'] = []
+        if family == 'moss':
+            from .native_reconstruction import moss_slg, MOSS_SLG_FIELDS
+            binding['slg'] = moss_slg(doc['source']['raw_fields'])
+            doc['extensions']['unknown_fields'] = [f for f in doc['extensions'].get('unknown_fields', [])
+                                                   if f['key'].casefold() not in MOSS_SLG_FIELDS]
+            handled = {'review unhandled parameter '+key for key in MOSS_SLG_FIELDS}
+            doc['unresolved'] = [x for x in doc['unresolved'] if x['message'].casefold() not in handled]
+            if binding['slg']['enabled'] and cfg['sampling']['cfg'] == 1.0:
+                binding['notes'].append('Recorded SLG is retained; at CFG 1 the unconditional pass is normally skipped.')
         if '/text/clip_skip' in doc['requested']:
             binding['notes'].append('Recorded Clip Skip is not applied: Forge uses no layer skip for this model conditioning.')
         if cfg['mode'] == 'img2img':

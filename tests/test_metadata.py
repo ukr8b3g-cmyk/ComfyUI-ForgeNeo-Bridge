@@ -1,5 +1,5 @@
 import json,struct,zlib,pytest
-from fnb.bridge.metadata import read_metadata,_tiff,Collector
+from fnb.bridge.metadata import read_metadata,inspect_drop,_tiff,Collector
 from fnb.bridge.infotext import import_infotext,parse_loras,split_fields
 from fnb.bridge.spec import BridgeError
 
@@ -33,6 +33,43 @@ def test_formats(kind):
 
 def test_native_priority():
     assert read_metadata(png([('parameters',TEXT),('workflow','{"nodes":[]}')]))['kind']=='native'
+
+
+@pytest.mark.parametrize('native', [('workflow','{"nodes":[]}'),('prompt','{"1":{"class_type":"KSampler"}}'),
+                                   ('Software','ComfyUI'),('Make','ComfyUI Save WEBP Meta')])
+def test_automatic_drop_keeps_comfy_even_with_copied_neo_parameters(native):
+    assert inspect_drop(png([('parameters',TEXT),native]))['kind']=='native'
+
+
+def test_comfy_exif_exporter_without_workflow_is_not_converted():
+    from PIL import Image
+    exif=Image.Exif()
+    exif[0x0131]='ComfyUI'
+    exif[0x010f]='ComfyUI Save WEBP Meta'
+    exif[0x9286]=b'UNICODE\0'+TEXT.encode('utf-16-be')
+    assert inspect_drop(webp(exif.tobytes()))['kind']=='native'
+
+
+@pytest.mark.parametrize('version', ['', ', Version: v1.10.1', ', Version: ComfyUI'])
+def test_ambiguous_parameters_are_manual_only(version):
+    text=TEXT[:TEXT.index(', Version:')]+version
+    image=png([('parameters',text)])
+    assert read_metadata(image)['kind']=='forge'
+    assert inspect_drop(image)['kind']=='unknown'
+
+
+@pytest.mark.parametrize('image', [png([('parameters',TEXT)]),webp(tiff(TEXT)),
+                                  b'\xff\xd8\xff\xfe'+struct.pack('>H',len(TEXT.encode())+2)+TEXT.encode()+b'\xff\xd9'])
+def test_automatic_drop_recognizes_explicit_neo(image):
+    assert inspect_drop(image)['kind']=='forge'
+
+
+def test_automatic_drop_delegates_unreadable_metadata_but_keeps_limits(monkeypatch):
+    assert inspect_drop(b'not an image')['kind']=='unknown'
+    assert inspect_drop(png([('parameters',TEXT)])[:-2])['kind']=='unknown'
+    monkeypatch.setattr('fnb.bridge.metadata.MAX_IMAGE',10)
+    with pytest.raises(BridgeError) as caught:inspect_drop(b'x'*11)
+    assert caught.value.code=='IMPORT_LIMIT_EXCEEDED'
 
 def test_explicit_zero_seed_aliases():
     doc=import_infotext(TEXT).document();c=doc['effective']

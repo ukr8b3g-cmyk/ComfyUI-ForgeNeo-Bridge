@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0 — 2026-10-22
+
+- Add MOSS-Image Base/SFT workflow reconstruction through native ComfyUI loaders and sampling. Preserve LoRA, SLG, Shift and discard-penultimate settings, with editable negative conditioning even when the imported CFG is 1.
+- Prioritize ComfyUI workflow/prompt/exporter metadata on image drops. Automatically reconstruct only explicit Forge Neo metadata; delegate ambiguous or unreadable metadata to the original importer while retaining broader manual inspection.
+- Rename the settings sidebar category to ForgeNeo Bridge without changing the saved setting ID or ON/OFF value.
+- Verify 97 focused Python tests, 56 JavaScript tests, isolated real-frontend graph/layout/link preservation, and one actual SFT + 8-step LoRA GPU run at 880×1184. The user confirmed local operation. Forge image parity is not guaranteed; MOSS Hires remains unsupported and Base is GPU-unverified.
+
 ## 1.0.1 — 2026-10-14
 
 - Fix JPEG canvas drops when Custom Scripts or another extension installs its image importer after Bridge setup. Preserve native Comfy workflow delegation and the disabled setting without duplicate Bridge processing.
