@@ -11,7 +11,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        # Keep the Linux image compatible with the pinned Playwright browser harness.
+        os: [ubuntu-24.04, windows-latest]
     runs-on: ${{ matrix.os }}
     env:
       HF_HUB_OFFLINE: '1'
