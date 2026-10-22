@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1 — 2026-10-23
+
+- Guard failed image-import rollback with the original graph, workflow identity and import sequence. Preserve recovery after a partial load on the same target, but skip restoration after switching workflows or starting a newer import.
+- Copy Bridge node metadata before adding generated/layout fields, leaving the input reconstruction plan unchanged across repeated builds.
+- Add asynchronous failure and input-immutability regressions. All 68 JavaScript tests pass; no new live-UI or GPU validation was performed for this maintenance update. MOSS Base remains GPU-unverified and MOSS Hires remains unsupported.
+
 ## 1.1.0 — 2026-10-22
 
 - Add MOSS-Image Base/SFT workflow reconstruction through native ComfyUI loaders and sampling. Preserve LoRA, SLG, Shift and discard-penultimate settings, with editable negative conditioning even when the imported CFG is 1.

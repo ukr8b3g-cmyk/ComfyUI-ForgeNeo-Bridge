@@ -154,3 +154,57 @@ test('registered frontend handles a Forge image without opening a dialog',async(
     assert.deepEqual(alerts,[]);
     delete globalThis.__forgeApp;delete globalThis.__forgeApi;delete globalThis.window;delete globalThis.document;
 });
+
+
+for (const type of ['KSampler', 'SamplerCustomAdvanced']) {
+    test(`detached ${type} keeps the input plan unchanged across repeated builds`, () => {
+        const created=[];
+        const creator={createNode(type){const n={type,widgets:[],inputs:[],outputs:[{}]};created.push(n);return n;}};
+        const p={schema_version:'1.0.0',nodes:[{id:'1',type,values:{},properties:{
+            forge_neo_bridge:{source_id:'sampler',generated:false,layout_id:'source-layout'}
+        }}],edges:[]};
+        const before=structuredClone(p);
+        Object.freeze(p.nodes[0].properties.forge_neo_bridge);
+        buildDetached(p,creator,Graph);
+        buildDetached(p,creator,Graph);
+        assert.deepEqual(p,before);
+        assert.notEqual(created[0].properties.forge_neo_bridge,p.nodes[0].properties.forge_neo_bridge);
+        assert.equal(created[0].properties.forge_neo_bridge.source_id,'sampler');
+        assert.equal(created[0].properties.forge_neo_bridge.generated,true);
+        assert.notEqual(created[0].properties.forge_neo_bridge.layout_id,created[1].properties.forge_neo_bridge.layout_id);
+    });
+}
+
+for (const outcome of ['false', 'throw']) {
+    for (const change of ['same', 'workflow', 'workflow-without-id', 'graph', 'newer-drop']) {
+        test(`failed asynchronous load (${outcome}, ${change}) restores only its own target`, async () => {
+            const graph=new Graph();
+            graph.nodes.push({type:'original',widgets:[]});
+            const manager={activeWorkflow:change==='workflow-without-id'?{}:{id:'A'}};
+            const loaded=[];let serial=1,finish;
+            const pending=new Promise(resolve=>{finish=resolve;});
+            const app={graph,rootGraph:graph,extensionManager:{workflowManager:manager},
+                async loadGraphData(value){
+                    loaded.push(value);
+                    if(loaded.length===1){
+                        graph.nodes=[]; // Failed loading may already have cleared the graph.
+                        await pending;
+                        if(outcome==='throw')throw new Error('load failed');
+                        return false;
+                    }
+                    return true;
+                }};
+            const context=captureCanvas(app,serial);
+            const placing=placeReconstructed({plan:{...plan(),name:'Forge'}},app,lite,context,()=>serial);
+            assert.equal(loaded.length,1);
+            if(change==='workflow')manager.activeWorkflow={id:'B'};
+            if(change==='workflow-without-id')manager.activeWorkflow={};
+            if(change==='graph')app.rootGraph=new Graph();
+            if(change==='newer-drop')serial++;
+            finish();
+            await assert.rejects(placing,outcome==='throw'?/load failed/:/rejected/);
+            assert.equal(loaded.length,change==='same'?2:1);
+            if(change==='same')assert.deepEqual(loaded[1],context.before);
+        });
+    }
+}

@@ -26,9 +26,9 @@ export function buildDetached(plan, LiteGraph, GraphClass, app) {
         if (!node) throw new Error(`Missing node: ${item.type}`);
         if (item.title != null) node.title = item.title;
         node.properties = {...node.properties, ...item.properties};
-        node.properties.forge_neo_bridge ??= {};
-        node.properties.forge_neo_bridge.generated = true;
-        node.properties.forge_neo_bridge.layout_id = layoutId;
+        node.properties.forge_neo_bridge = {
+            ...node.properties.forge_neo_bridge, generated:true, layout_id:layoutId
+        };
         graph.add(node); nodes.set(item.id, node);
         for (const [name, value] of Object.entries(item.values)) {
             const widget = node.widgets?.find(w => w.name === name);
@@ -61,24 +61,27 @@ export function buildDetached(plan, LiteGraph, GraphClass, app) {
 export function captureCanvas(app, serial) {
     const graph = app.rootGraph || app.graph;
     const before = structuredClone(graph.serialize());
+    const workflowRef = app.extensionManager?.workflowManager?.activeWorkflow;
     return {graph,before,fingerprint:JSON.stringify(before),
-        workflow:app.extensionManager?.workflowManager?.activeWorkflow?.id,serial};
+        workflow:workflowRef?.id,workflowRef,serial};
 }
 
 export async function placeReconstructed(result, app, LiteGraph, context, currentSerial) {
-    const {graph,before,fingerprint,workflow,serial} = context;
+    const {graph,before,fingerprint,workflow,workflowRef,serial} = context;
+    const ownsTarget = () => serial === currentSerial() && graph === (app.rootGraph || app.graph)
+        && workflowRef === app.extensionManager?.workflowManager?.activeWorkflow
+        && workflow === app.extensionManager?.workflowManager?.activeWorkflow?.id;
     if (!LiteGraph?.createNode || typeof app.loadGraphData !== 'function') throw new Error('Comfy graph API is unavailable');
     const data = buildDetached(result.plan, LiteGraph, graph.constructor,app);
-    if (serial !== currentSerial() || graph !== (app.rootGraph || app.graph)
-        || workflow !== app.extensionManager?.workflowManager?.activeWorkflow?.id
-        || JSON.stringify(graph.serialize()) !== fingerprint) {
+    if (!ownsTarget() || JSON.stringify(graph.serialize()) !== fingerprint) {
         throw new Error('Workflow changed while reading the image; drop again on the current canvas');
     }
     try {
         const loaded = await app.loadGraphData(data,true,true,result.plan.name+'.json');
         if (loaded === false) throw new Error('Comfy rejected the reconstructed workflow');
     } catch (error) {
-        if (serial === currentSerial()) await app.loadGraphData(before,true,true,'ForgeNeo Bridge — previous workflow');
+        // A failed load may have cleared this graph; only its owner must still match.
+        if (ownsTarget()) await app.loadGraphData(before,true,true,'ForgeNeo Bridge — previous workflow');
         throw error;
     }
 }
