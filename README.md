@@ -1,6 +1,6 @@
 # ComfyUI-ForgeNeo-Bridge
 
-[日本語](#japanese) · **[English ↓](#english)**
+[日本語](#japanese) · **[English ↓](#english)** · [最新Release：v1.1.0](https://github.com/ukr8b3g-cmyk/ComfyUI-ForgeNeo-Bridge/releases/tag/v1.1.0)
 
 <a id="japanese"></a>
 
@@ -9,6 +9,18 @@
 **Forge Neoで生成した画像をComfyUIへドラッグ＆ドロップすると、画像の生成情報からワークフローを自動作成するカスタムノードです。** プロンプト、モデル名、シード、Steps、CFG、Sampler、Scheduler、サイズなどを読み取り、モデル系統に応じたノードを接続します。読み込み後もComfyUI上で自由に編集できます。
 
 専用アプリで設定を編集したり、配布ワークフローJSONを先に用意したりする必要はありません。**生成情報が残っている元のPNG／WebP／JPEG**をドロップしてください。生成は通常のRun／Queue操作で開始します。
+
+<a id="release-v110-ja"></a>
+
+### v1.1.0の主な更新（2026-10-22）
+
+[**v1.1.0のReleaseを開く**](https://github.com/ukr8b3g-cmyk/ComfyUI-ForgeNeo-Bridge/releases/tag/v1.1.0) · [変更履歴](CHANGELOG.md)
+
+- **MOSS-Image Base / SFTに対応：** 元画像の生成情報から、ComfyUIの標準ノードを中心とした編集可能なワークフローを作成します。
+- **ComfyUI画像は元のワークフローを優先：** BridgeがONでも、ワークフロー入り画像をBridge用に組み替えません。
+- **設定カテゴリ名を「ForgeNeo Bridge」に統一。**
+
+MOSS SFTはGPU生成を確認済みです。BaseはGPU未検証で、MOSSのHires.fixは未対応です。元画像と同じ結果になることは保証しません。Forge compatibilityは初期ON、Sampling adjustmentsは初期OFFのままです。
 
 ### 再生成の例：Illustrious / SDXL
 
@@ -211,6 +223,18 @@ Sampler下のプレビュー用余白と、保存画像を大きく表示する�
 **ComfyUI-ForgeNeo-Bridge reads generation metadata from a Forge Neo image and builds an editable ComfyUI workflow when you drag and drop the image onto the canvas.** It restores prompts, model names, seed, steps, CFG, sampler, scheduler and dimensions, and connects nodes appropriate to the model family. You can then edit the workflow in ComfyUI.
 
 There is no separate settings application or prerequisite workflow JSON. Drop the **original PNG, WebP or JPEG with its generation metadata intact**. Start generation with ComfyUI's normal Run/Queue action.
+
+<a id="release-v110-en"></a>
+
+### What’s new in v1.1.0 (2026-10-22)
+
+[**Open the v1.1.0 Release**](https://github.com/ukr8b3g-cmyk/ComfyUI-ForgeNeo-Bridge/releases/tag/v1.1.0) · [Changelog](CHANGELOG.md)
+
+- **MOSS-Image Base / SFT support:** Reconstructs editable workflows using primarily native ComfyUI nodes from the source image’s generation metadata.
+- **Existing ComfyUI workflows take priority:** Images with an embedded workflow keep that workflow even when Bridge import is ON.
+- **The settings category is now named “ForgeNeo Bridge”.**
+
+MOSS SFT has completed GPU generation. Base remains GPU-unverified, and MOSS Hires.fix is unsupported. Identical results are not guaranteed. Forge compatibility still defaults to ON; Sampling adjustments still defaults to OFF.
 
 ### Example: Illustrious / SDXL
 
