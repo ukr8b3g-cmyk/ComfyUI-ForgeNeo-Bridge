@@ -86,13 +86,15 @@ export function installSeedControls(node, app, widgets = globalThis.comfyAPI?.wi
     };
     control.afterQueued = context => { if (!runBefore()) advance(context); };
     // LiteGraph writes widgets_values by visual index, including holes for
-    // nonserialized controls. Keep the original six-value file layout intact.
+    // nonserialized controls. Trim only the saved array, never the live widgets.
     const serialize = node.serialize;
     node.serialize = function (...args) {
-        const displayed = this.widgets;
-        this.widgets = displayed.filter(widget => widget !== control);
-        try { return serialize.apply(this, args); }
-        finally { this.widgets = displayed; }
+        const data = serialize.apply(this, args);
+        if (Array.isArray(data.widgets_values) && data.widgets_values.length === this.widgets.length) {
+            const index = this.widgets.indexOf(control);
+            if (index >= 0) data.widgets_values.splice(index, 1);
+        }
+        return data;
     };
     const onSerialize = node.onSerialize;
     node.onSerialize = function (data) {

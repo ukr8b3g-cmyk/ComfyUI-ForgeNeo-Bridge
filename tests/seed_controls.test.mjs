@@ -78,3 +78,22 @@ test('Comfy before-generation preference preserves first seed and advances later
     control.beforeQueued();assert.equal(seed.value,'9007199254740994');
     control.afterQueued();assert.equal(seed.value,'9007199254740994');
 });
+
+
+test('saving never removes the live control widget from the node',()=>{
+    const {node,control,values}=sampler();
+    let displayed=node.widgets;
+    const original=displayed;
+    Object.defineProperty(node,'widgets',{get:()=>displayed,set:next=>{
+        assert(next.includes(control),'serialization must not detach the live control');
+        displayed=next;
+    }});
+    control.value='randomize';
+    for(let i=0;i<3;i++){
+        const saved=node.serialize();
+        assert.deepEqual(saved.widgets_values,values);
+        assert.equal(saved.properties.forge_neo_bridge.seed_control,'randomize');
+        assert.equal(node.widgets,original);
+        assert.equal(node.widgets[1],control);
+    }
+});
