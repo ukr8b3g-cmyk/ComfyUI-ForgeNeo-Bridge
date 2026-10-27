@@ -1,5 +1,15 @@
 # Validation status — implementation 1.0.0
 
+## Built-in MOSS Scheduler restoration — 2026-10-26
+
+- A Forge MOSS ON image previously restored its ordinary Schedule Type for all three modes. Added regressions reproduced three failures before the fix and now pass. OFF/missing metadata preserves the existing graph; non-MOSS families do not activate the override.
+- `ForgeNeoBridgeMOSSScheduler` supplies Shift/Curve/Sigma sigmas to SamplerCustomAdvanced without registering global handlers or depending on an external MOSS node. Source sampler, steps, CFG, seed, LoRAs and model Shift remain separate. Unknown enabled modes stop with a reason. Forge img2img step mode is recovered from recorded MOSS Schedule steps; incomplete/inconsistent evidence is rejected.
+- Python baseline: **373 passed, 262 skipped**. After the change: **424 passed, 262 skipped**. Skipped pinned-oracle cases remain unverified. Pytest was reused from existing local developer tooling; no host dependencies were installed.
+- Frontend Graph/DOM/help tests: **69 passed**. These include English/Japanese help for every new control and existing workflow/tab protections.
+- Separate CPU verification used real ComfyUI ModelSamplingDiscreteFlow, the installed Forge MOSS adapter and AST-extracted original Forge predictor/step/sigma-selection statements: **252 exact sigma comparisons** (3 modes, shifts 1/5/12, steps 1/8/32/50, txt2img and both Forge img2img modes). Model/GPU sampling preparation was excluded and the heavyweight Forge model-type guard was substituted.
+- The actual external Comfy MOSS extension was then loaded in the same isolated process: **6 exact comparisons** passed. Bridge left the scheduler registry unchanged in both states; CUDA initialization calls were zero.
+- This verifies CPU schedule calculations and reconstruction contracts, not live image-drop behavior, pretrained GPU generation or Forge/Comfy image parity. The user's server was not restarted. Python changes require a normal ComfyUI restart before use.
+
 ## Deep-audit fixes — 2026-09-27
 
 - Reviewed the supplied diagnostic ZIP against current code and reproduced the relevant paths. CFG++ now retains negative conditioning at CFG 1, including an empty negative prompt. Core-backed Euler CFG++, Euler a CFG++ and DPM++ 2M CFG++ were checked with actual ComfyUI CPU sampling and both adjustment modes. Skip Early CFG and NGMS callback cases are covered by focused tests.

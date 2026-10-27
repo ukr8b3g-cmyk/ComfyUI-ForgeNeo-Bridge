@@ -1,6 +1,6 @@
 # ComfyUI-ForgeNeo-Bridge
 
-[日本語](#japanese) · **[English ↓](#english)** · [最新Release：v1.1.0](https://github.com/ukr8b3g-cmyk/ComfyUI-ForgeNeo-Bridge/releases/tag/v1.1.0)
+[日本語](#japanese) · **[English ↓](#english)** · [最新Release：v1.2.0](https://github.com/ukr8b3g-cmyk/ComfyUI-ForgeNeo-Bridge/releases/tag/v1.2.0)
 
 <a id="japanese"></a>
 
@@ -12,6 +12,10 @@
 
 <a id="release-v110-ja"></a>
 
+### v1.2.0の更新（2026-10-28）
+
+MOSS SchedulerのShift／Curve／Sigma復元を内蔵しました。Bong Tangentのステップ境界、native経路の未適用設定、保存時にシード制御欄が消える問題を修正しています。[Release](https://github.com/ukr8b3g-cmyk/ComfyUI-ForgeNeo-Bridge/releases/tag/v1.2.0) ／ [変更履歴](CHANGELOG.md)
+
 ### v1.1.0の主な更新（2026-10-22）
 
 [**v1.1.0のReleaseを開く**](https://github.com/ukr8b3g-cmyk/ComfyUI-ForgeNeo-Bridge/releases/tag/v1.1.0) · [変更履歴](CHANGELOG.md)
@@ -21,6 +25,18 @@
 - **設定カテゴリ名を「ForgeNeo Bridge」に統一。**
 
 MOSS SFTはGPU生成を確認済みです。BaseはGPU未検証で、MOSSのHires.fixは未対応です。元画像と同じ結果になることは保証しません。Forge compatibilityは初期ON、Sampling adjustmentsは初期OFFのままです。
+
+### MOSS Schedulerの復元
+
+Forge Neo画像に`MOSS Scheduler: True`がある場合、記録されたShift・Curve・Sigmaを選択済みの**ForgeNeo Bridge MOSS Scheduler**を自動配線します。通常のSchedule TypeとDiscard penultimate sigmaは上書きされ、MOSS側の末尾処理を二重適用しません。計算処理はBridgeに内蔵しているため、外部のMOSS Scheduler拡張は導入不要です。
+
+OFF／記録なしの画像は従来の経路を使います。モデルShift、Sampler、Steps、CFG、Seed、LoRAは別々に保持します。img2imgの切り出し方式は`MOSS Schedule steps`から復元し、記録不足・不整合や不明なONモードは理由を表示して停止します。MOSS Hires.fixは引き続き未対応です。
+
+### 読み込み・ステップの制限
+
+読み込み時の制限：nativeレシピではVariation strengthが非ゼロの画像を理由付きで拒否します。Flux.2は既定のSimple／AutomaticからFlux2Schedulerを組み立て、Karrasなど別の明示指定は黙って置換せず拒否します。画像の設定を変更してから再度読み込んでください。
+
+Bong Tangentは、discardによる追加分を含む内部ステップ数が足りず区間を構成できない場合、ゼロ除算の代わりに理由付きで停止します。Stepsを増やすかDiscard penultimateを有効にしてください。成立する条件の計算式は変更しません。
 
 ### 再生成の例：Illustrious / SDXL
 
@@ -226,6 +242,10 @@ There is no separate settings application or prerequisite workflow JSON. Drop th
 
 <a id="release-v110-en"></a>
 
+### v1.2.0 update (2026-10-28)
+
+Bundled reconstruction of MOSS Scheduler Shift/Curve/Sigma modes. Fixes Bong Tangent step boundaries, silently unapplied native settings, and disappearing seed controls during saving. [Release](https://github.com/ukr8b3g-cmyk/ComfyUI-ForgeNeo-Bridge/releases/tag/v1.2.0) / [Changelog](CHANGELOG.md)
+
 ### What’s new in v1.1.0 (2026-10-22)
 
 [**Open the v1.1.0 Release**](https://github.com/ukr8b3g-cmyk/ComfyUI-ForgeNeo-Bridge/releases/tag/v1.1.0) · [Changelog](CHANGELOG.md)
@@ -235,6 +255,18 @@ There is no separate settings application or prerequisite workflow JSON. Drop th
 - **The settings category is now named “ForgeNeo Bridge”.**
 
 MOSS SFT has completed GPU generation. Base remains GPU-unverified, and MOSS Hires.fix is unsupported. Identical results are not guaranteed. Forge compatibility still defaults to ON; Sampling adjustments still defaults to OFF.
+
+### Restoring MOSS Scheduler
+
+When a Forge Neo image records `MOSS Scheduler: True`, Bridge connects **ForgeNeo Bridge MOSS Scheduler** with the recorded Shift, Curve or Sigma mode selected. This overrides the ordinary Schedule Type and Discard penultimate sigma setting, avoiding a second tail-removal operation. The calculation is bundled with Bridge; installing the external MOSS Scheduler extension is optional.
+
+OFF or missing metadata keeps the existing recipe. Model Shift, sampler, steps, CFG, seed and LoRAs retain their separate settings. Img2img tail selection is recovered from `MOSS Schedule steps`; missing/inconsistent evidence or an unknown enabled mode stops with a reason. MOSS Hires.fix remains unsupported.
+
+### Import and step limits
+
+Import limits: native recipes reject nonzero Variation strength with a specific error. Flux.2 uses its native Flux2Scheduler recipe for the Simple/Automatic defaults; explicit alternatives such as Karras are rejected instead of silently replaced. Change those source settings before importing again.
+
+Bong Tangent stops with a specific error when the internal step count, including any discard increment, cannot form both stages. Increase Steps or enable Discard penultimate. Supported schedules retain their existing calculation.
 
 ### Example: Illustrious / SDXL
 

@@ -306,6 +306,17 @@
       }
     }
   },
+  "ForgeNeoBridgeMOSSScheduler": {
+    "description": "Forge NeoのMOSS Scheduler上書きを、記録されたShift・Curve・Sigmaで復元します。計算処理はBridgeに内蔵され、外部MOSS拡張の導入は不要です。",
+    "inputs": {
+      "model": {"tooltip": "LoRAやモデルShiftを適用した後の、Guiderと同じモデルを接続します。"},
+      "mode": {"tooltip": "MOSS Shift Scheduler・MOSS Curve Scheduler・MOSS Sigma Schedulerを選びます。モデル側の数値Shiftとは別の設定です。"},
+      "steps": {"tooltip": "元画像に記録されたSampling Stepsです。img2imgの全スケジュールはstep_modeによって決まります。"},
+      "denoise": {"tooltip": "txt2imgは1です。img2imgは元画像のDenoising strengthを使います。0は空のSigma列を返します。"},
+      "step_mode": {"tooltip": "comfyはComfyUIのdenoise切り出しです。forge_scaledはStepsを全体の長さとしてimg2imgの実行区間を減らします。exact_stepsは指定区間数を保つため全体を伸ばします。画像読込時はMOSS Schedule stepsの記録からForgeの方式を復元します。"}
+    },
+    "outputs": {"0": {"tooltip": "SamplerCustomAdvancedのsigmasへ接続します。MOSS計算内で末尾を処理するため、別の末尾直前Sigma削除は追加しません。"}}
+  },
   "ForgeNeoBridgeScheduler": {
     "description": "ComfyUIのsigma列に末尾直前除外を適用します。Settingsの切替とは独立した専用ノードです。",
     "inputs": {

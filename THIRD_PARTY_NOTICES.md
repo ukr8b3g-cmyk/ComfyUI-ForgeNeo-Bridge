@@ -50,6 +50,20 @@ needed to avoid replacing the user's global `lark` package. Unused command-line
 tools and packaging hooks were omitted. Reproduction is documented by
 `tools/vendor_lark.py`; it is developer-only and never called on node import.
 
+## MOSS Scheduler — MIT
+
+`vendor/moss_scheduler.py` is an unchanged copy of the MOSS Shift Scheduler
+v0.9.0 calculation module (SHA256
+`1e74a759ddbadd6f571120da95f5b74bd83cf4193da07ec04cc32ff07119f139`).
+Source: https://github.com/ukr8b3g-cmyk/ComfyUI-MOSS-Shift-Scheduler.
+Its Power Shift and Radiance Shift functions derive from
+silveroxides/ComfyUI_PowerShiftScheduler, Copyright (c) 2025 Silver,
+commit `770d7b8e4104b8d864d1fed0a65713e4a3e7a953`.
+The complete MIT terms are in `vendor/MOSS-SCHEDULER-LICENSE`.
+Bridge adds metadata routing and Forge img2img tail selection outside this copy.
+It does not import, modify or require the separately installed MOSS extension,
+and does not register global scheduler handlers.
+
 ## Existing host dependencies
 
 PyTorch, NumPy, SciPy, Pillow, tqdm and ComfyUI are supplied by the host.

@@ -84,9 +84,19 @@ def native_plan(doc, positive, inventory):
     binding = doc['extensions']['reconstruction']
     family, cfg = binding['family'], binding['native_config']
     sampling, noise, image, prompts = (cfg[k] for k in ('sampling', 'noise', 'image', 'text'))
+    moss_schedule = binding.get('moss_scheduler', {}) if family == 'moss' else {}
+    moss_enabled = moss_schedule.get('enabled', False)
     if doc['unsupported']:
         issue = doc['unsupported'][0]
         raise BridgeError('NATIVE_EFFECT_UNSUPPORTED', issue['message'])
+    if noise['subseed_strength'] != 0:
+        raise BridgeError('NATIVE_VARIATION_UNSUPPORTED',
+                          f"{family}: Variation seed {noise['subseed']} / strength {noise['subseed_strength']} cannot be applied by the native recipe; set Variation strength to 0.",
+                          '/noise/subseed_strength')
+    if family in ('flux2_klein', 'flux2_dev') and '/sampling/scheduler' in doc['requested'] and sampling['scheduler'] not in ('simple', 'automatic'):
+        raise BridgeError('NATIVE_SCHEDULER_UNSUPPORTED',
+                          f"{family}: requested {sampling['scheduler']} cannot be applied by Flux2Scheduler; use the native recipe default Simple/Automatic.",
+                          '/sampling/scheduler')
     if cfg['mode'] not in ('txt2img', 'img2img'):
         raise BridgeError('NATIVE_MODE_UNSUPPORTED', f'{family}: {cfg["mode"]} requires a separate workflow')
     seed = int(noise['seed'])
@@ -95,7 +105,7 @@ def native_plan(doc, positive, inventory):
     sampler_name, scheduler = core_sampling(sampling)
     if sampler_name not in CORE_SAMPLERS:
         raise BridgeError('NATIVE_SAMPLER_UNSUPPORTED', f'{family}: {sampler_name} is unavailable in the native recipe')
-    if family not in ('flux2_klein', 'flux2_dev') and scheduler not in CORE_SCHEDULERS:
+    if not moss_enabled and family not in ('flux2_klein', 'flux2_dev') and scheduler not in CORE_SCHEDULERS:
         raise BridgeError('NATIVE_SCHEDULER_UNSUPPORTED', f'{family}: {scheduler} is unavailable in the native recipe')
     if family == 'flux2_dev' and prompts['negative_raw'].strip():
         raise BridgeError('NATIVE_NEGATIVE_UNSUPPORTED', 'Flux.2 Dev blueprint has no negative conditioning input')
@@ -225,9 +235,14 @@ def native_plan(doc, positive, inventory):
         for src, key in ((noise_node,'noise'),(guider,'guider'),(sampler_node,'sampler'),
                          (sigmas,'sigmas'),(latent,'latent_image')):
             connect(src, 0, sampler, key)
-    elif sampling['discard_penultimate_requested']:
-        sigmas = add('ForgeNeoBridgeScheduler', {'scheduler':scheduler, 'steps':sampling['steps'],
-                     'denoise':sampling['denoise']})
+    elif moss_enabled or sampling['discard_penultimate_requested']:
+        if moss_enabled:
+            sigmas = add('ForgeNeoBridgeMOSSScheduler', {'mode':moss_schedule['mode'],
+                         'steps':sampling['steps'], 'denoise':sampling['denoise'],
+                         'step_mode':moss_schedule['step_mode']})
+        else:
+            sigmas = add('ForgeNeoBridgeScheduler', {'scheduler':scheduler, 'steps':sampling['steps'],
+                         'denoise':sampling['denoise']})
         connect(model, model_slot, sigmas, 'model')
         noise_node = add('RandomNoise', {'noise_seed':seed})
         sampler_node = add('KSamplerSelect', {'sampler_name':sampler_name})

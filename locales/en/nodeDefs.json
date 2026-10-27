@@ -306,6 +306,17 @@
       }
     }
   },
+  "ForgeNeoBridgeMOSSScheduler": {
+    "description": "Restore Forge Neo's MOSS Scheduler override with the selected Shift, Curve or Sigma mode. Bridge includes the calculation; the external MOSS extension is optional.",
+    "inputs": {
+      "model": {"tooltip": "Connect the same model as the guider, after LoRAs and model Shift settings."},
+      "mode": {"tooltip": "MOSS Shift Scheduler, MOSS Curve Scheduler or MOSS Sigma Scheduler. This is separate from the model's numeric Shift value."},
+      "steps": {"tooltip": "Sampling Steps recorded in the source image. The step mode determines the full schedule used for img2img."},
+      "denoise": {"tooltip": "One for text-to-image. For img2img, use the recorded denoising strength. Zero returns an empty schedule."},
+      "step_mode": {"tooltip": "comfy uses ComfyUI's denoise tail. forge_scaled keeps the full schedule at Steps and reduces img2img intervals. exact_steps expands the full schedule to retain the requested intervals. Bridge recovers the Forge img2img mode from MOSS Schedule steps."}
+    },
+    "outputs": {"0": {"tooltip": "Connect to SamplerCustomAdvanced sigmas. The MOSS calculation already handles its schedule tail; do not apply another discard-penultimate operation."}}
+  },
   "ForgeNeoBridgeScheduler": {
     "description": "Build core ComfyUI sigmas with penultimate-sigma removal. This dedicated node is independent of the Settings switches.",
     "inputs": {

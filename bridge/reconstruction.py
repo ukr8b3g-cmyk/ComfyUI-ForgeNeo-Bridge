@@ -315,11 +315,19 @@ def reconstruct(text, inventory, probe=probe_family, *, image_size=None):
         binding['notes'] = []
         if family == 'moss':
             from .native_reconstruction import moss_slg, MOSS_SLG_FIELDS
+            from .moss_scheduler import schedule_config, METADATA_FIELDS
             binding['slg'] = moss_slg(doc['source']['raw_fields'])
+            binding['moss_scheduler'] = schedule_config(doc['source']['raw_fields'], cfg)
+            handled_fields = MOSS_SLG_FIELDS | METADATA_FIELDS
             doc['extensions']['unknown_fields'] = [f for f in doc['extensions'].get('unknown_fields', [])
-                                                   if f['key'].casefold() not in MOSS_SLG_FIELDS]
-            handled = {'review unhandled parameter '+key for key in MOSS_SLG_FIELDS}
+                                                   if f['key'].casefold() not in handled_fields]
+            handled = {'review unhandled parameter '+key for key in handled_fields}
             doc['unresolved'] = [x for x in doc['unresolved'] if x['message'].casefold() not in handled]
+            if binding['moss_scheduler']['enabled']:
+                doc['unsupported'] = [x for x in doc['unsupported'] if x['path'] != '/sampling/scheduler']
+                binding['notes'].append('MOSS Scheduler ON: '+binding['moss_scheduler']['mode']+
+                                        ' is restored using the built-in Bridge scheduler. '
+                                        'The recorded normal Schedule Type and discard-penultimate option are overridden.')
             if binding['slg']['enabled'] and cfg['sampling']['cfg'] == 1.0:
                 binding['notes'].append('Recorded SLG is retained; at CFG 1 the unconditional pass is normally skipped.')
         if '/text/clip_skip' in doc['requested']:
@@ -335,7 +343,8 @@ def reconstruct(text, inventory, probe=probe_family, *, image_size=None):
             doc['unresolved'] = [x for x in doc['unresolved'] if x['message'].casefold() != 'review unhandled parameter distilled cfg scale']
         from .native_reconstruction import CORE_SAMPLERS, CORE_SCHEDULERS, core_sampling
         sampler, scheduler = core_sampling(cfg['sampling'])
-        if sampler in CORE_SAMPLERS and (scheduler in CORE_SCHEDULERS or family in ('flux2_klein','flux2_dev')):
+        if sampler in CORE_SAMPLERS and (scheduler in CORE_SCHEDULERS or family in ('flux2_klein','flux2_dev')
+                                        or binding.get('moss_scheduler',{}).get('enabled')):
             doc['unsupported'] = [item for item in doc['unsupported'] if not (
                 item['code'] == 'UNSUPPORTED_COMBINATION' and item['path'] == '/sampling' and
                 item['message'] == 'Registered inventory item has no V1 executable adapter.')]

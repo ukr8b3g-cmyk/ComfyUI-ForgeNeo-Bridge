@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0 — 2026-10-28
+
+- Reconstruct Forge MOSS Scheduler Shift/Curve/Sigma modes using the bundled Bridge scheduler, with explicit sigma wiring and img2img step recovery. Preserve OFF/missing metadata behavior and avoid double discard handling. Include the frontend node allowlist fix.
+- Reject Bong Tangent stage lengths that cannot form a valid schedule with a structured error, preserving supported sigma calculations.
+- Reject active native Variation and explicit nondefault Flux.2 schedules such as Karras instead of silently ignoring or replacing them. Keep the native Simple/Automatic defaults.
+- Keep seed controls visible during workflow serialization. Align runtime and package version labels.
+- Validate 466 local Python tests (262 skipped), 70 JavaScript tests, and 252 Forge / 6 optional-extension MOSS CPU comparisons. No new GPU or visual-parity validation. MOSS Hires remains unsupported; the same-workflow edit-during-load rollback candidate remains under investigation.
+
 ## 1.1.1 — 2026-10-23
 
 - Guard failed image-import rollback with the original graph, workflow identity and import sequence. Preserve recovery after a partial load on the same target, but skip restoration after switching workflows or starting a newer import.

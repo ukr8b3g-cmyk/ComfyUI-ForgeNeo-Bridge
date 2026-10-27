@@ -10,6 +10,16 @@ class Graph {
 }
 const lite={createNode(type){return {type,inputs:[{name:'spec'}],outputs:[{}],widgets:[{name:'payload',value:'',options:{}}],connect(){return {};}};}};
 const plan=()=>({schema_version:'1.0.0',config_hash:'a'.repeat(64),nodes:[{id:'1',type:'ForgeCompatSpec',title:'Spec',values:{payload:'18446744073709551615'}},{id:'2',type:'ForgeCompatText',values:{}}],edges:[['1',0,'2','spec']]});
+test('MOSS Scheduler nodes restore all three modes through the frontend graph builder',()=>{
+    const creator={createNode(type){return {type,inputs:[{name:'model'}],outputs:[{}],
+        widgets:['mode','steps','denoise','step_mode'].map(name=>({name,value:'',options:{}})),connect(){return {};}};}};
+    for(const mode of ['MOSS Shift Scheduler','MOSS Curve Scheduler','MOSS Sigma Scheduler']){
+        const values={mode,steps:8,denoise:1,step_mode:'comfy'};
+        const data=buildDetached({schema_version:'1.0.0',nodes:[{id:'1',type:'ForgeNeoBridgeMOSSScheduler',values}],edges:[]},creator,Graph);
+        assert.equal(data.nodes[0].type,'ForgeNeoBridgeMOSSScheduler');
+        assert.deepEqual(data.nodes[0].widgets_values,[mode,8,1,'comfy']);
+    }
+});
 test('build detached and retain exact seed text',()=>{
     const data=buildDetached(plan(),lite,Graph);
     assert.equal(data.nodes[0].widgets_values[0],'18446744073709551615');

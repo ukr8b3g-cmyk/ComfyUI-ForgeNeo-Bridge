@@ -195,6 +195,11 @@ def bong_tangent_scheduler(n, sigma_min, sigma_max, device, *, start=1.0, middle
     stage_2_len = n - midpoint
     stage_1_len = n - stage_2_len
 
+    if min(stage_1_len, stage_2_len) < 2:
+        raise BridgeError('UNSUPPORTED_COMBINATION',
+                          'Bong Tangent requires at least two points per stage; increase steps or enable discard penultimate.',
+                          '/sampling/steps')
+
     tan_sigmas_1 = get_bong_tangent_sigmas(stage_1_len, slope_1, pivot_1, start, middle)
     tan_sigmas_2 = get_bong_tangent_sigmas(stage_2_len, slope_2, pivot_2 - stage_1_len, middle, end)
 

@@ -232,12 +232,29 @@ class ForgeNeoBridgeScheduler:
         return (sigmas[-(steps + 1):],)
 
 
+class ForgeNeoBridgeMOSSScheduler:
+    @classmethod
+    def INPUT_TYPES(cls):
+        from .bridge.moss_scheduler import MODES, STEP_MODES
+        return {'required':{'model':('MODEL',), 'mode':(list(MODES),),
+                'steps':('INT',{'default':8,'min':1,'max':10000}),
+                'denoise':('FLOAT',{'default':1.0,'min':0.0,'max':1.0,'step':0.01})},
+                'optional':{'step_mode':(list(STEP_MODES),{'default':'comfy'})}}
+    RETURN_TYPES=('SIGMAS',)
+    FUNCTION='schedule';CATEGORY=CATEGORY
+    DESCRIPTION='MOSS Shift, Curve or Sigma schedule bundled with Bridge. No external MOSS node is required.'
+    def schedule(self,model,mode,steps,denoise,step_mode='comfy'):
+        from .bridge.moss_scheduler import build_sigmas
+        return (build_sigmas(model.get_model_object('model_sampling'),mode,steps,denoise,step_mode),)
+
+
 NODE_CLASS_MAPPINGS={c.__name__:c for c in (ForgeCompatSpec,ForgeCompatText,ForgeCompatNoise,ForgeCompatSampler,
                                              ForgeNeoBridgeTextEncode,ForgeNeoBridgeSettings,ForgeNeoBridgeKSampler,
-                                             ForgeNeoBridgeScheduler)}
+                                             ForgeNeoBridgeScheduler,ForgeNeoBridgeMOSSScheduler)}
 NODE_DISPLAY_NAME_MAPPINGS={'ForgeCompatSpec':'Forge Compat Import / Spec','ForgeCompatText':'Forge Compat Text',
                            'ForgeCompatNoise':'Forge Compat Noise','ForgeCompatSampler':'Forge Compat Sampler',
                            'ForgeNeoBridgeTextEncode':'ForgeNeo Bridge Text Encode',
                            'ForgeNeoBridgeSettings':'ForgeNeo Bridge Settings',
                            'ForgeNeoBridgeKSampler':'ForgeNeo Bridge KSampler',
-                           'ForgeNeoBridgeScheduler':'ForgeNeo Bridge Discard Penultimate Scheduler'}
+                           'ForgeNeoBridgeScheduler':'ForgeNeo Bridge Discard Penultimate Scheduler',
+                           'ForgeNeoBridgeMOSSScheduler':'ForgeNeo Bridge MOSS Scheduler'}
