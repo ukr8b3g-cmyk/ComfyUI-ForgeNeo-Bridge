@@ -324,10 +324,12 @@ def reconstruct(text, inventory, probe=probe_family, *, image_size=None):
             handled = {'review unhandled parameter '+key for key in handled_fields}
             doc['unresolved'] = [x for x in doc['unresolved'] if x['message'].casefold() not in handled]
             if binding['moss_scheduler']['enabled']:
+                mode = binding['moss_scheduler']['mode']
                 doc['unsupported'] = [x for x in doc['unsupported'] if x['path'] != '/sampling/scheduler']
-                binding['notes'].append('MOSS Scheduler ON: '+binding['moss_scheduler']['mode']+
-                                        ' is restored using the built-in Bridge scheduler. '
-                                        'The recorded normal Schedule Type and discard-penultimate option are overridden.')
+                if doc['extensions'].get('unhandled_scheduler') == mode:
+                    del doc['extensions']['unhandled_scheduler']
+                binding['notes'].append(f'Restored {mode} using the built-in Bridge scheduler. '
+                                        'The MOSS schedule takes precedence over discard-penultimate settings.')
             if binding['slg']['enabled'] and cfg['sampling']['cfg'] == 1.0:
                 binding['notes'].append('Recorded SLG is retained; at CFG 1 the unconditional pass is normally skipped.')
         if '/text/clip_skip' in doc['requested']:

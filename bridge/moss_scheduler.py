@@ -6,7 +6,7 @@ from .spec import BridgeError
 
 MODES = ('MOSS Shift Scheduler', 'MOSS Curve Scheduler', 'MOSS Sigma Scheduler')
 STEP_MODES = ('comfy', 'forge_scaled', 'exact_steps')
-METADATA_FIELDS = frozenset(('moss scheduler', 'moss scheduler mode', 'moss scheduler version',
+METADATA_FIELDS = frozenset(('schedule type', 'moss scheduler', 'moss scheduler mode', 'moss scheduler version',
                              'moss schedule steps', 'moss schedule intervals'))
 
 
@@ -18,9 +18,11 @@ def schedule_config(fields, cfg):
         if key in values and values[key] != value:
             raise BridgeError('INVALID_METADATA', f'Conflicting {field["key"]}')
         values[key] = value
-    if not parse_bool(values.get('moss scheduler', 'False')):
-        return {'enabled': False}
-    mode = values.get('moss scheduler mode')
+    mode = values.get('schedule type')
+    if mode not in MODES:
+        if not parse_bool(values.get('moss scheduler', 'False')):
+            return {'enabled': False}
+        mode = values.get('moss scheduler mode')
     if mode not in MODES:
         raise BridgeError('MOSS_SCHEDULE_UNSUPPORTED',
                           'MOSS Scheduler is ON but its mode is missing or unknown. '

@@ -114,6 +114,21 @@ def test_enabled_moss_scheduler_overrides_the_recorded_normal_schedule(mode):
     assert any(f'MOSS {mode} Scheduler' in note for note in plan['notes'])
 
 
+@pytest.mark.parametrize('enabled', [False, True], ids=['lower-off', 'lower-shift'])
+def test_standard_moss_schedule_takes_precedence(enabled):
+    text = TEXT.replace('Schedule type: Simple', 'Schedule type: MOSS Curve Scheduler')
+    text += (f', MOSS Scheduler: {enabled}, MOSS Scheduler Mode: MOSS Shift Scheduler, '
+             'MOSS Scheduler Version: 0.9.1, MOSS Schedule steps: 8, MOSS Schedule intervals: 8')
+    doc, plan = plan_for(text)
+    by_type = {node['type']: node for node in plan['nodes']}
+    scheduler = by_type['ForgeNeoBridgeMOSSScheduler']
+    assert scheduler['values'] == {'mode': 'MOSS Curve Scheduler', 'steps': 8,
+                                  'denoise': 1., 'step_mode': 'comfy'}
+    assert [scheduler['id'], 0, by_type['SamplerCustomAdvanced']['id'], 'sigmas'] in plan['edges']
+    assert not any(issue['path'] == '/sampling/scheduler' for issue in doc['unsupported'])
+    assert 'unhandled_scheduler' not in doc['extensions']
+
+
 @pytest.mark.parametrize('normal', ['Align Your Steps', 'Unknown old schedule', 'Karras'])
 def test_moss_override_does_not_validate_the_unused_normal_scheduler(normal):
     text = TEXT.replace('Schedule type: Simple', 'Schedule type: '+normal)
